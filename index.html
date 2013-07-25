@@ -17,6 +17,11 @@ body {
   border-left: solid 2px #ddd;
   top: 0;
 }
+.chart circle.little {
+  fill: #aaa;
+  stroke: #666;
+  stroke-width: 1.5px;
+}
 </style>
 <script src="./d3/d3.v3.min.js" charset="utf-8"></script>
 <script src="./mephytis.v0.1.js" charset="utf-8"></script>
@@ -37,7 +42,8 @@ body {
 var M = createMephytis({});
 M.createUnrootedFourLeafTreeWidget({
   parentElID: "#chart-1",
-  edgeChangeProbArray: [0.01, 0.02, 0.03, 0.04, 0.05]
+  edgeChangeProbArray: [0.01, 0.02, 0.03, 0.04, 0.05],
+  svgSubSelector: ".little"
 });
 </script>
   </body>

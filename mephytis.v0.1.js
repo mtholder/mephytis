@@ -16,6 +16,7 @@ function createMephytis(spec) {
      **/
     var SQRT_2 = Math.sqrt(2);
     var LEFT_INTERNAL_X_FRAC = SQRT_2 / (1 + 2 * SQRT_2);
+    var svgSubSelector = spec.svgSubSelector;
     var margin = (spec.margin !== undefined ? spec.margin : 15);
     var leftMargin = (spec.leftMargin !== undefined ? spec.leftMargin : margin);
     var rightMargin = (spec.rightMargin !== undefined ? spec.rightMargin : margin);
@@ -65,13 +66,20 @@ function createMephytis(spec) {
     var svg = d3.select(spec.parentElID).append("svg")
           .attr("width", treePanelWidth)
           .attr("height", treePanelHeight);
-    svg.selectAll(".little")
-      .data(edgeChangeProbArray)
+    var selected = svg.selectAll(svgSubSelector);
+    selected.data(edgeChangeProbArray)
       .enter().append("circle")
         .attr("class", "little")
         .attr("cx", edgeLen2XCoord)
         .attr("cy", edgeLen2YCoord)
         .attr("r", 3);
+    selected.data(edgeChangeProbArray).enter().append("rect")//x="0" y="0" width="50" height="50" fill="green"
+      .attr("x", edgeLen2XCoord)
+      .attr("y", edgeLen2YCoord)
+      .attr("width", "10")
+      .attr("height", "10")
+      .attr("fill", "red");
+    return selected;
   };
   return M;
 }
