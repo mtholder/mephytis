@@ -33,47 +33,12 @@ body {
 </div>
 <script type='text/javascript'>
 /*jslint indent: 2 */
-/*globals d3 */
-
-// Adapted from http://mbostock.github.io/d3/tutorial/circle.html
-var data = [32, 57, 112];
-var w = 360;
-var h = 180;
-var dataEnter = data.concat(293);
-var dataExit = data.slice(0, 2);
-var x = d3.scale.ordinal().domain([57, 32, 112]).rangePoints([0, w], 1);
-var y = d3.scale.ordinal().domain(data).rangePoints([0, h], 2);
-(function () {
-  var svg = d3.select("#chart-1").append("svg")
-      .attr("width", w)
-      .attr("height", h);
-  svg.selectAll(".little")
-    .data(data)
-    .enter().append("circle")
-      .attr("class", "little")
-      .attr("cx", x)
-      .attr("cy", y)
-      .attr("r", 12);
-
-  d3.select("#chart-1 button").on("click", function () {
-    svg.selectAll(".select").remove();
-    svg.selectAll(".select")
-      .data(data)
-      .enter().append("circle")
-        .attr("class", "select")
-        .attr("cx", x)
-        .attr("cy", y)
-        .attr("r", 60)
-        .style("fill", "none")
-        .style("stroke", "red")
-        .style("stroke-opacity", 1e-6)
-        .style("stroke-width", 3)
-      .transition()
-        .duration(750)
-        .attr("r", 12)
-        .style("stroke-opacity", 1);
-  });
-}());
+/*globals d3, createMephytis*/
+var M = createMephytis({});
+M.createUnrootedFourLeafTreeWidget({
+  parentElID: "#chart-1",
+  edgeChangeProbArray: [0.01, 0.02, 0.03, 0.04, 0.05]
+});
 </script>
   </body>
 </html>
