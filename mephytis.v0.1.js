@@ -1,6 +1,5 @@
 /*jslint indent: 2 */
 /*globals d3 */
-// Some code was from http://mbostock.github.io/d3/tutorial/circle.html
 function createMephytis(spec) {
   "use strict";
   var M = {};
