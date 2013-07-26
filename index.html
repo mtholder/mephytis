@@ -17,7 +17,12 @@ body {
   border-left: solid 2px #ddd;
   top: 0;
 }
-.chart circle.little {
+.chart circle.node {
+  fill: #aaa;
+  stroke: #666;
+  stroke-width: 1.5px;
+}
+.chart line.edge {
   fill: #aaa;
   stroke: #666;
   stroke-width: 1.5px;
@@ -43,7 +48,8 @@ var M = createMephytis({});
 M.createUnrootedFourLeafTreeWidget({
   parentElID: "#chart-1",
   edgeChangeProbArray: [0.01, 0.02, 0.03, 0.04, 0.05],
-  svgSubSelector: ".little"
+  svgNodeSelector: ".node",
+  svgEdgeSelector: ".edge"
 });
 </script>
   </body>
