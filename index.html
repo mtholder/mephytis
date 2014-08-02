@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<!-- from http://bl.ocks.org/mbostock/4339083
+and http://bl.ocks.org/mbostock/4063550
+
+!-->
+<meta charset="utf-8">
+<style>
+
+.node circle {
+  fill: #fff;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+
+.node {
+  font: 10px sans-serif;
+}
+
+.link {
+  fill: none;
+  stroke: #ccc;
+  stroke-width: 1.5px;
+}
+
+</style>
+<body>
+<script src="d3/d3.v3.min.js"></script>
+<div id='chart'></div>
+<script>
+var UP_ANGLE = Math.PI/2; // 90 degree up
+var DOWN_ANGLE = 3*Math.PI/2; // 90 degree down
+var TOL = 0.01;
+var NODE_COLOR = '#88f';
+var node_array = [
+  {"index": 0,
+   "name": "iAB"
+  },
+  { "index": 1,
+    "name": "A",
+    "edge": {
+      "parent_index": 0,
+      "length": 0.5,
+      "angle": 5*Math.PI/4
+    }
+  },
+  { "index": 2,
+    "name": "B",
+    "edge": {
+      "parent_index": 0,
+      "length": 0.5,
+      "angle": 3*Math.PI/4
+    }
+  },
+  { "index": 3,
+    "name": "iCD",
+    "edge": {
+      "parent_index": 0,
+      "length": 0.5,
+      "angle": 0
+    }
+  },
+  { "index": 4,
+    "name": "C",
+    "edge": {
+      "parent_index": 3,
+      "length": 0.5,
+      "angle": 7*Math.PI/4
+    }
+  },
+  { "index": 5,
+    "name": "D",
+    "edge": {
+      "parent_index": 3,
+      "length": 0.5,
+      "angle": Math.PI/4
+    }
+  }
+];
+var edge_array = [];
+var i;
+for (i=0; i < 5; ++i){
+  edge_array[i] = node_array[i+1];
+}
+
+var width = 190;
+var height = 100;
+var scaler = 100;
+var max_len = 0.5;
+var scaled_max_len = max_len*scaler;
+var root_x = Math.sqrt(2)*width/(1 + 2*Math.sqrt(2));
+var root_y = height/2;
+var radius = 6;
+var svg_root = d3.select('#chart').append('svg')
+    .attr({ 'width': width, 'height': height, })
+    .style('background', 'white');
+var nodeX = function(node) {
+  var e = node.edge;
+  if (e) {
+    var par_x = node_array[e.parent_index].x;
+    var diag_dist = e.length*scaler;
+    node.x = Math.cos(e.angle)*diag_dist + par_x;
+  } else {
+    node.x = root_x;
+  }
+  return node.x;
+};
+
+var nodeY = function(node)  {
+  var e = node.edge;
+  if (e) {
+    var par_y = node_array[e.parent_index].y;
+    var diag_dist = e.length*scaler;
+    node.y = Math.sin(e.angle)*diag_dist + par_y;
+  } else {
+    node.y = root_y;
+  }
+  return node.y;
+};
+var parNodeX = function(node) {
+  var e = node.edge;
+  if (e) {
+    return nodeX(node_array[e.parent_index]);
+  } 
+  return node.x;
+};
+var parNodeY = function(node)  {
+  var e = node.edge;
+  if (e) {
+    return nodeY(node_array[e.parent_index]);
+  } 
+  return node.y;
+};
+
+var drag = d3.behavior.drag()
+    .origin(function(d) { return d; })
+    .on("drag", dragmove);
+
+var euclidean_dist = function (x1, y1, x2, y2) {
+  return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+};
+
+function dragmove(node) {
+  var e = node.edge;
+  var nx, ny, p_x, p_y, m_x, m_y, par_ind, ang, dx, dy, y_from_x, x_from_y;
+  var dist_from_y, dist_from_x;
+  var hit_par=false;
+  var hit_limit=false;
+  dx = d3.event.x;
+  dy = d3.event.y;
+  if (node.index == 0) {
+    nx = dx;
+    ny = dy;
+  } else {
+    par_ind = e.parent_index;
+    ang = e.angle;
+    p_x = nodeX(node_array[par_ind]);
+    p_y = nodeY(node_array[par_ind]);
+    m_x = Math.cos(ang)*scaled_max_len + p_x;
+    m_y = Math.sin(ang)*scaled_max_len + p_y;
+    if (node.index != 3) {
+      if (node.index == 1) {
+        if (dx > p_x || dy > p_y) {
+          nx = p_x;
+          ny = p_y;
+          hit_par = true;
+        } else if (dx < m_x || dy < m_y) {
+          nx = m_x;
+          ny = m_y;
+          hit_limit = true;
+        }
+      } else if (node.index == 2) {
+        if (dx > p_x || dy < p_y) {
+          nx = p_x;
+          ny = p_y;
+          hit_par = true;
+        } else if (dx < m_x || dy > m_y) {
+          nx = m_x;
+          ny = m_y;
+          hit_limit = true;
+        }
+      } else if (node.index == 4) {
+        if (dx < p_x || dy > p_y) {
+          nx = p_x;
+          ny = p_y;
+          hit_par = true;
+        } else if (dx > m_x || dy < m_y) {
+          nx = m_x;
+          ny = m_y;
+          hit_limit = true;
+        }
+      } else if (node.index == 5) {
+        if (dx < p_x || dy < p_y) {
+          nx = p_x;
+          ny = p_y;
+          hit_par = true;
+        } else if (dx > m_x || dy > m_y) {
+          nx = m_x;
+          ny = m_y;
+          hit_limit = true;
+        }
+      }
+      if ((!hit_par) && (!hit_limit)) {
+        y_from_x = p_y + (dx - p_x)*Math.tan(e.angle);
+        x_from_y = p_x + (dy - p_y)/Math.tan(e.angle);
+        dist_from_y = euclidean_dist(node.x, node.y, x_from_y, dy);
+        dist_from_x = euclidean_dist(node.x, node.y, dx, y_from_x);
+        if (dist_from_y < dist_from_x) {
+          nx = x_from_y;
+          ny = dy
+        } else {
+          nx = dx;
+          ny = y_from_x;
+        }
+      }
+    } else {
+      if (dx < p_x) {
+        nx = p_x;
+        hit_par = true;
+      } else if (dx > m_x) {
+        nx = m_x;
+        hit_limit = true;
+      } else {
+        nx = dx;
+      }
+      ny = p_y;
+    }
+
+    e.length = euclidean_dist(p_x, p_y, nx, ny)/scaler;
+  }
+
+  node.x = nx;
+  node.y = ny;
+
+  d3.select(this)
+    .attr("cx", nx)
+    .attr("cy", ny);
+  refresh_nodes(node.index);
+  refresh_edges(node.index);
+}
+
+
+var refresh_nodes = function (moved_index) {
+svg_root.selectAll('circle').data(node_array)
+  .attr({ 'cx': nodeX, 'cy': nodeY})
+};
+var refresh_edges = function (moved_index) {
+  svg_root.selectAll('line').data(edge_array)
+  .attr({ 'x1': nodeX, 'y1': nodeY, 'x2': parNodeX, 'y2': parNodeY});
+};
+
+svg_root.selectAll('circle').data(node_array)
+  .enter().append('circle')
+  .attr({ 'cx': nodeX, 'cy': nodeY, 'r': radius, 'fill': NODE_COLOR, 'stroke': NODE_COLOR, })
+  .call(drag);
+
+svg_root.selectAll('line').data(edge_array)
+  .enter().append('line')
+  .attr({ 'x1': nodeX, 'y1': nodeY, 'x2': parNodeX, 'y2': parNodeY, 'stroke': NODE_COLOR, 'stroke-width':2});
+
+
+</script>
