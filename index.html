@@ -25,6 +25,7 @@ and http://bl.ocks.org/mbostock/4063550
 </style>
 <body>
 <script src="d3/d3.v3.min.js"></script>
+<script src="jquery/jquery.v2.min.js"></script>
 <div id='chart'></div>
 <script>
 var UP_ANGLE = Math.PI/2; // 90 degree up
@@ -42,7 +43,8 @@ var node_array = [
       "parent_index": 0,
       "length": 0.5,
       "angle": 5*Math.PI/4
-    }
+    },
+    "color": NODE_COLOR
   },
   { "index": 2,
     "name": "B",
@@ -50,7 +52,8 @@ var node_array = [
       "parent_index": 0,
       "length": 0.5,
       "angle": 3*Math.PI/4
-    }
+    },
+    "color": NODE_COLOR
   },
   { "index": 3,
     "name": "iCD",
@@ -58,7 +61,8 @@ var node_array = [
       "parent_index": 0,
       "length": 0.5,
       "angle": 0
-    }
+    },
+    "color": NODE_COLOR
   },
   { "index": 4,
     "name": "C",
@@ -66,7 +70,8 @@ var node_array = [
       "parent_index": 3,
       "length": 0.5,
       "angle": 7*Math.PI/4
-    }
+    },
+    "color": NODE_COLOR
   },
   { "index": 5,
     "name": "D",
@@ -74,7 +79,8 @@ var node_array = [
       "parent_index": 3,
       "length": 0.5,
       "angle": Math.PI/4
-    }
+    },
+    "color": NODE_COLOR
   }
 ];
 var edge_array = [];
@@ -140,16 +146,24 @@ var euclidean_dist = function (x1, y1, x2, y2) {
   return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
 };
 
-function dragmove(node) {
-  do_highlight_node(d3.select(this));
-  var e = node.edge;
-  var nx, ny, p_x, p_y, m_x, m_y, par_ind, ang, dx, dy, y_from_x, x_from_y;
+function dragmove() {
+  var dx, dy;
+  dx = d3.event.x;
+  dy = d3.event.y;
+  var selection = d3.select(this);
+  do_highlight_node(selection);
+  selection.each(function (node_data) {
+      do_dragmove(node_data, dx, dy);
+  });
+}
+
+var do_dragmove = function(node_data, dx, dy) {
+  var e = node_data.edge;
+  var nx, ny, p_x, p_y, m_x, m_y, par_ind, ang, y_from_x, x_from_y;
   var dist_from_y, dist_from_x;
   var hit_par=false;
   var hit_limit=false;
-  dx = d3.event.x;
-  dy = d3.event.y;
-  if (node.index == 0) {
+  if (node_data.index == 0) {
     nx = dx;
     ny = dy;
   } else {
@@ -159,8 +173,8 @@ function dragmove(node) {
     p_y = nodeY(node_array[par_ind]);
     m_x = Math.cos(ang)*scaled_max_len + p_x;
     m_y = Math.sin(ang)*scaled_max_len + p_y;
-    if (node.index != 3) {
-      if (node.index == 1) {
+    if (node_data.index != 3) {
+      if (node_data.index == 1) {
         if (dx > p_x || dy > p_y) {
           nx = p_x;
           ny = p_y;
@@ -170,7 +184,7 @@ function dragmove(node) {
           ny = m_y;
           hit_limit = true;
         }
-      } else if (node.index == 2) {
+      } else if (node_data.index == 2) {
         if (dx > p_x || dy < p_y) {
           nx = p_x;
           ny = p_y;
@@ -180,7 +194,7 @@ function dragmove(node) {
           ny = m_y;
           hit_limit = true;
         }
-      } else if (node.index == 4) {
+      } else if (node_data.index == 4) {
         if (dx < p_x || dy > p_y) {
           nx = p_x;
           ny = p_y;
@@ -190,7 +204,7 @@ function dragmove(node) {
           ny = m_y;
           hit_limit = true;
         }
-      } else if (node.index == 5) {
+      } else if (node_data.index == 5) {
         if (dx < p_x || dy < p_y) {
           nx = p_x;
           ny = p_y;
@@ -204,8 +218,8 @@ function dragmove(node) {
       if ((!hit_par) && (!hit_limit)) {
         y_from_x = p_y + (dx - p_x)*Math.tan(e.angle);
         x_from_y = p_x + (dy - p_y)/Math.tan(e.angle);
-        dist_from_y = euclidean_dist(node.x, node.y, x_from_y, dy);
-        dist_from_x = euclidean_dist(node.x, node.y, dx, y_from_x);
+        dist_from_y = euclidean_dist(node_data.x, node_data.y, x_from_y, dy);
+        dist_from_x = euclidean_dist(node_data.x, node_data.y, dx, y_from_x);
         if (dist_from_y < dist_from_x) {
           nx = x_from_y;
           ny = dy
@@ -230,14 +244,11 @@ function dragmove(node) {
     e.length = euclidean_dist(p_x, p_y, nx, ny)/scaler;
   }
 
-  node.x = nx;
-  node.y = ny;
+  node_data.x = nx;
+  node_data.y = ny;
+  refresh_nodes(node_data.index);
+  refresh_edges(node_data.index);
 
-  d3.select(this)
-    .attr("cx", nx)
-    .attr("cy", ny);
-  refresh_nodes(node.index);
-  refresh_edges(node.index);
 }
 
 
@@ -249,18 +260,27 @@ var refresh_edges = function (moved_index) {
   svg_root.selectAll('line').data(edge_array)
   .attr({ 'x1': nodeX, 'y1': nodeY, 'x2': parNodeX, 'y2': parNodeY});
 };
-var g_curr_highlighted_node = null;
+var g_curr_highlighted_selection = null;
 var highlight_node = function() {
   do_highlight_node(d3.select(this));
 }
-var do_highlight_node = function(nd) {
-  if (nd != g_curr_highlighted_node) {
-    if (g_curr_highlighted_node) {
-      g_curr_highlighted_node.style("fill", nd.unselected_style_fill);
+var deselect_node_style_fill = function (node_data) {
+  return node_data.unselected_style_fill;
+}
+var select_node_style_fill = function (node_data) {
+  if (!node_data.unselected_style_fill) {
+    node_data.unselected_style_fill = node_data.color;
+  }
+  return NODE_HIGHLIGHT_COLOR;
+}
+var do_highlight_node = function(node_selection) {
+  if (node_selection != g_curr_highlighted_selection) {
+    if (g_curr_highlighted_selection) {
+      g_curr_highlighted_selection.style("fill", deselect_node_style_fill);
     }
-    nd.unselected_style_fill = nd.style.fill;
-    nd.style("fill", NODE_HIGHLIGHT_COLOR)
-    g_curr_highlighted_node = nd;
+    node_selection.style("fill", select_node_style_fill);
+    unselected_style_fill = node_selection.style.fill;
+    g_curr_highlighted_selection = node_selection;
   }
 }
 svg_root.selectAll('circle').data(node_array)
@@ -278,5 +298,9 @@ svg_root.selectAll('line').data(edge_array)
   .enter().append('line')
   .attr({ 'x1': nodeX, 'y1': nodeY, 'x2': parNodeX, 'y2': parNodeY, 'stroke': NODE_COLOR, 'stroke-width':2});
 
+$(document).ready(function() {
+    $(document).keydown(function(e) {
+    });
+}); 
 
 </script>
