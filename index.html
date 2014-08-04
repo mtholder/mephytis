@@ -33,6 +33,7 @@ var DOWN_ANGLE = 3*Math.PI/2; // 90 degree down
 var TOL = 0.01;
 var NODE_COLOR = '#88f';
 var NODE_HIGHLIGHT_COLOR = "#EA0";
+var ARROW_KEY_PIXEL_JUMP = 1;
 var node_array = [
   {"index": 0,
    "name": "iAB"
@@ -151,6 +152,10 @@ function dragmove() {
   dx = d3.event.x;
   dy = d3.event.y;
   var selection = d3.select(this);
+  drag_selection(selection, dx, dy);
+}
+
+var drag_selection = function(selection, dx, dy) {
   do_highlight_node(selection);
   selection.each(function (node_data) {
       do_dragmove(node_data, dx, dy);
@@ -300,6 +305,62 @@ svg_root.selectAll('line').data(edge_array)
 
 $(document).ready(function() {
     $(document).keydown(function(e) {
+      if (g_curr_highlighted_selection) {
+        var dx, dy, move=false;
+        var datum = g_curr_highlighted_selection.data();
+        var d = datum[0];
+        if (e.keyCode == 38) { // arrow up...
+          if (d.index == 5 || d.index == 1) {
+              dx = d.x - ARROW_KEY_PIXEL_JUMP;
+              dy = d.y - ARROW_KEY_PIXEL_JUMP;
+              move = true;
+          } else if (d.index == 2 || d.index == 4) {
+              dx = d.x + ARROW_KEY_PIXEL_JUMP;
+              dy = d.y - ARROW_KEY_PIXEL_JUMP;
+              move = true;
+          }
+        } else if (e.keyCode == 40) {
+          if (d.index == 5 || d.index == 1) {
+              dx = d.x + ARROW_KEY_PIXEL_JUMP;
+              dy = d.y + ARROW_KEY_PIXEL_JUMP;
+              move = true;
+          } else if (d.index == 2 || d.index == 4) {
+              dx = d.x - ARROW_KEY_PIXEL_JUMP;
+              dy = d.y + ARROW_KEY_PIXEL_JUMP;
+              move = true;
+          }
+        }
+        if (e.keyCode == 37) { // arrow left...
+          if (d.index == 5 || d.index == 1) {
+              dx = d.x - ARROW_KEY_PIXEL_JUMP;
+              dy = d.y - ARROW_KEY_PIXEL_JUMP;
+              move = true;
+          } else if (d.index == 2 || d.index == 4) {
+              dx = d.x - ARROW_KEY_PIXEL_JUMP;
+              dy = d.y + ARROW_KEY_PIXEL_JUMP;
+              move = true;
+          } else if (d.index == 3) {
+              dx = d.x - ARROW_KEY_PIXEL_JUMP;
+              move = true;
+          }
+        } else if (e.keyCode == 39) { // arrow right...
+          if (d.index == 5 || d.index == 1) {
+              dx = d.x + ARROW_KEY_PIXEL_JUMP;
+              dy = d.y + ARROW_KEY_PIXEL_JUMP;
+              move = true;
+          } else if (d.index == 2 || d.index == 4) {
+              dx = d.x + ARROW_KEY_PIXEL_JUMP;
+              dy = d.y - ARROW_KEY_PIXEL_JUMP;
+              move = true;
+          } else if (d.index == 3) {
+              dx = d.x + ARROW_KEY_PIXEL_JUMP;
+              move = true;
+          }
+        }
+        if (move) {
+            drag_selection(g_curr_highlighted_selection, dx, dy);
+          }
+      }
     });
 }); 
 
