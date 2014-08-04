@@ -31,6 +31,7 @@ var UP_ANGLE = Math.PI/2; // 90 degree up
 var DOWN_ANGLE = 3*Math.PI/2; // 90 degree down
 var TOL = 0.01;
 var NODE_COLOR = '#88f';
+var NODE_HIGHLIGHT_COLOR = "#EA0";
 var node_array = [
   {"index": 0,
    "name": "iAB"
@@ -140,6 +141,7 @@ var euclidean_dist = function (x1, y1, x2, y2) {
 };
 
 function dragmove(node) {
+  do_highlight_node(d3.select(this));
   var e = node.edge;
   var nx, ny, p_x, p_y, m_x, m_y, par_ind, ang, dx, dy, y_from_x, x_from_y;
   var dist_from_y, dist_from_x;
@@ -247,10 +249,29 @@ var refresh_edges = function (moved_index) {
   svg_root.selectAll('line').data(edge_array)
   .attr({ 'x1': nodeX, 'y1': nodeY, 'x2': parNodeX, 'y2': parNodeY});
 };
-
+var g_curr_highlighted_node = null;
+var highlight_node = function() {
+  do_highlight_node(d3.select(this));
+}
+var do_highlight_node = function(nd) {
+  if (nd != g_curr_highlighted_node) {
+    if (g_curr_highlighted_node) {
+      g_curr_highlighted_node.style("fill", nd.unselected_style_fill);
+    }
+    nd.unselected_style_fill = nd.style.fill;
+    nd.style("fill", NODE_HIGHLIGHT_COLOR)
+    g_curr_highlighted_node = nd;
+  }
+}
 svg_root.selectAll('circle').data(node_array)
   .enter().append('circle')
-  .attr({ 'cx': nodeX, 'cy': nodeY, 'r': radius, 'fill': NODE_COLOR, 'stroke': NODE_COLOR, })
+  .attr({ 'cx': nodeX, 
+          'cy': nodeY,
+          'r': radius,
+          'fill': NODE_COLOR,
+          'stroke': NODE_COLOR,
+          })
+  .on("click", highlight_node)
   .call(drag);
 
 svg_root.selectAll('line').data(edge_array)
