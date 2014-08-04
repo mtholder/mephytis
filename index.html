@@ -28,12 +28,17 @@ and http://bl.ocks.org/mbostock/4063550
 <script src="jquery/jquery.v2.min.js"></script>
 <div id='chart'></div>
 <script>
+var width = 290;
+var height = 200;
+var scaler = 200;
+var max_len = 0.5;
 var UP_ANGLE = Math.PI/2; // 90 degree up
 var DOWN_ANGLE = 3*Math.PI/2; // 90 degree down
 var TOL = 0.01;
 var NODE_COLOR = '#88f';
 var NODE_HIGHLIGHT_COLOR = "#EA0";
 var ARROW_KEY_PIXEL_JUMP = 1;
+var STARTING_EDGE_LENGTH = 0.1;
 var node_array = [
   {"index": 0,
    "name": "iAB"
@@ -42,7 +47,7 @@ var node_array = [
     "name": "A",
     "edge": {
       "parent_index": 0,
-      "length": 0.5,
+      "length": STARTING_EDGE_LENGTH,
       "angle": 5*Math.PI/4
     },
     "color": NODE_COLOR
@@ -51,7 +56,7 @@ var node_array = [
     "name": "B",
     "edge": {
       "parent_index": 0,
-      "length": 0.5,
+      "length": STARTING_EDGE_LENGTH,
       "angle": 3*Math.PI/4
     },
     "color": NODE_COLOR
@@ -60,7 +65,7 @@ var node_array = [
     "name": "iCD",
     "edge": {
       "parent_index": 0,
-      "length": 0.5,
+      "length": STARTING_EDGE_LENGTH,
       "angle": 0
     },
     "color": NODE_COLOR
@@ -69,7 +74,7 @@ var node_array = [
     "name": "C",
     "edge": {
       "parent_index": 3,
-      "length": 0.5,
+      "length": STARTING_EDGE_LENGTH,
       "angle": 7*Math.PI/4
     },
     "color": NODE_COLOR
@@ -78,22 +83,22 @@ var node_array = [
     "name": "D",
     "edge": {
       "parent_index": 3,
-      "length": 0.5,
+      "length": STARTING_EDGE_LENGTH,
       "angle": Math.PI/4
     },
     "color": NODE_COLOR
   }
 ];
+var i;
+for (i = 0; i < node_array.length; ++i) {
+  node_array[i].tree = 't1'
+}
 var edge_array = [];
 var i;
 for (i=0; i < 5; ++i){
   edge_array[i] = node_array[i+1];
 }
 
-var width = 190;
-var height = 100;
-var scaler = 100;
-var max_len = 0.5;
 var scaled_max_len = max_len*scaler;
 var root_x = Math.sqrt(2)*width/(1 + 2*Math.sqrt(2));
 var root_y = height/2;
@@ -263,7 +268,7 @@ svg_root.selectAll('circle').data(node_array)
 };
 var refresh_edges = function (moved_index) {
   svg_root.selectAll('line').data(edge_array)
-  .attr({ 'x1': nodeX, 'y1': nodeY, 'x2': parNodeX, 'y2': parNodeY});
+  .attr({'x1': nodeX, 'y1': nodeY, 'x2': parNodeX, 'y2': parNodeY});
 };
 var g_curr_highlighted_selection = null;
 var highlight_node = function() {
@@ -288,6 +293,12 @@ var do_highlight_node = function(node_selection) {
     g_curr_highlighted_selection = node_selection;
   }
 }
+var generateNodeId = function(node_data) {
+  return node_data.tree + 'n' + node_data.index;
+}
+var generateEdgeId = function(edge_data) {
+  return edge_data.tree + 'e' + edge_data.index;
+}
 svg_root.selectAll('circle').data(node_array)
   .enter().append('circle')
   .attr({ 'cx': nodeX, 
@@ -295,21 +306,38 @@ svg_root.selectAll('circle').data(node_array)
           'r': radius,
           'fill': NODE_COLOR,
           'stroke': NODE_COLOR,
+          'id': generateNodeId,
           })
   .on("click", highlight_node)
   .call(drag);
 
 svg_root.selectAll('line').data(edge_array)
   .enter().append('line')
-  .attr({ 'x1': nodeX, 'y1': nodeY, 'x2': parNodeX, 'y2': parNodeY, 'stroke': NODE_COLOR, 'stroke-width':2});
+  .attr({'x1': nodeX,
+         'y1': nodeY,
+         'x2': parNodeX,
+         'y2': parNodeY,
+         'id': generateEdgeId,
+         'stroke': NODE_COLOR,
+         'stroke-width':4});
 
 $(document).ready(function() {
     $(document).keydown(function(e) {
       if (g_curr_highlighted_selection) {
+        var next_node;
         var dx, dy, move=false;
         var datum = g_curr_highlighted_selection.data();
         var d = datum[0];
-        if (e.keyCode == 38) { // arrow up...
+        if (e.keyCode == 9) {
+          if (d.index == 5) {
+            next_node = d3.select('#' + d.tree + 'n0');
+          } else {
+            next_node = d3.select('#' + d.tree + 'n' + (1 + d.index));
+          }
+          do_highlight_node(next_node);
+          e.preventDefault();
+          return;
+        } else if (e.keyCode == 38) { // arrow up...
           if (d.index == 5 || d.index == 1) {
               dx = d.x - ARROW_KEY_PIXEL_JUMP;
               dy = d.y - ARROW_KEY_PIXEL_JUMP;
