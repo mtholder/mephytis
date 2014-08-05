@@ -50,9 +50,15 @@ and http://bl.ocks.org/mbostock/4063550
       <input type="number" min="0" max="1000" step="1" value="10" id="acCount"><br/>
       <label for="adCount">AD<span id="nValue-value"></span></label>
       <input type="number" min="0" max="1000" step="1" value="10" id="adCount">
+      <br />
+      <input name="boot" type="button" value="Bootstrap" onclick="bootstrap()" />
       <br/>
-          <input name="boot" type="button" value="Bootstrap" onclick="bootstrap()" />
-  </td><td><div id="hist"/></td></tr>
+      <p id="abBootText" />
+      <br/>
+      <p id="acBootText" />
+      <br/>
+      <p id="adBootText" />
+        </td><td><div id="hist"/></td></tr>
 </table>
 <br/><br/><br/><br/><br/><br/><p>Thanks to <a href="http://bl.ocks.org/d3noob/10633704">http://bl.ocks.org/d3noob/10633704</a></p>
 <script>
@@ -676,7 +682,13 @@ var abCountInput = d3.select("#abCount");
 var acCountInput = d3.select("#acCount");
 var adCountInput = d3.select("#adCount");
 
+var abBootText = d3.select("#abBootText");
+var acBootText = d3.select("#acBootText");
+var adBootText = d3.select("#adBootText");
 
+abBootText.text('AB ??');
+acBootText.text('AC ??');
+adBootText.text('AD ??');
 
 function update() {
     var ab = parseInt(abCountInputRaw.value);
@@ -707,6 +719,9 @@ function update() {
            'fill': '#000',
            'stroke': '#000',
            'id': 'origpoint'});
+    abBootText.text('AB ??');
+    acBootText.text('AC ??');
+    adBootText.text('AD ??');
 }
 
 var count_vec_radius = function(data, i) {
@@ -773,8 +788,27 @@ function bootstrap() {
     var i;
     var counts = [ab, ac, ad];
     var v = [{'counts': counts}];
+    var nAB = 0;
+    var nAC = 0;
+    var nAD = 0;
     for (i=1; i < 1 + num_boot_reps; ++i) {
-      v[i] = {'counts': bootstrap_resample(counts)};
+      var resc = bootstrap_resample(counts);
+      if (resc[0] > resc[1]) {
+        if (resc[0] > resc[2]) {
+          nAB += 1;
+        }
+      }
+      if (resc[1] > resc[0]) {
+        if (resc[1] > resc[2]) {
+          nAC += 1;
+        }
+      }
+      if (resc[2] > resc[1]) {
+        if (resc[2] > resc[0]) {
+          nAD += 1;
+        }
+      }
+      v[i] = {'counts': resc};
     }
     
     
@@ -782,7 +816,7 @@ function bootstrap() {
     hist_svg.selectAll("circle")
       .data([])
       .exit().remove();
-  hist_svg.selectAll("circle")
+    hist_svg.selectAll("circle")
       .data([{'counts': counts}])
       .enter().append('circle')
       .attr({'cx': count_vec_to_x,
@@ -799,6 +833,9 @@ function bootstrap() {
              'fill':'#000',
              'r': count_vec_radius,
              'class': '.bootpoint'});
+    abBootText.text('AB ' + (100*nAB/num_boot_reps).toFixed(1) + '%');
+    acBootText.text('AC ' + (100*nAC/num_boot_reps).toFixed(1) + '%');
+    adBootText.text('AD ' + (100*nAD/num_boot_reps).toFixed(1) + '%');
 }
 abCountInput.on("input", function() {
   update();
