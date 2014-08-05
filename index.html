@@ -512,7 +512,7 @@ var init_tree_panel = function(o) {
   return dn;
 };
 
-var TREE1COLOR = '#0F0';
+var TREE1COLOR = '#0D0';
 var TREE2COLOR = '#00F';
 var TREE3COLOR = '#F00';
 t1n = init_tree_panel({'svg_root': tree1svg_root,
@@ -569,11 +569,11 @@ var fullProbIndexToTree = function (i) {
   return 't3';
 }
 var BARY_MARGIN = 10;
-var BARY_LEFT_MARGIN = 10;
+var BARY_LEFT_MARGIN = 40;
 var BARY_RIGHT_MARGIN = 10;
 var BARY_X_SCALER = BARY_HEIGHT - BARY_RIGHT_MARGIN - BARY_LEFT_MARGIN;
 var BARY_BASE = BARY_HEIGHT - BARY_MARGIN;
-var BARY_TOP = BARY_MARGIN;
+var BARY_TOP = 20;
 var BARY_Y_SCALER = BARY_BASE - BARY_TOP;
 if (BARY_Y_SCALER > BARY_X_SCALER) {
   BARY_Y_SCALER = BARY_X_SCALER;
@@ -626,7 +626,24 @@ var mid_left_tri = barycentric2xy([0.5, 0])
 var mid_right_tri = barycentric2xy([0.5, 0.5])
 var mid_bottom_tri = barycentric2xy([0, 0.5])
 var mid_point_tri = barycentric2xy([1/3, 1/3])
-
+hist_svg.append('text')
+    .attr({'x': lower_left_tri.x - 29,
+           'y': lower_left_tri.y + 6,
+           'stroke': TREE3COLOR,
+           'fill': TREE3COLOR})
+    .text("AD");
+hist_svg.append('text')
+    .attr({'x': lower_right_tri.x + 2,
+           'y': lower_right_tri.y + 6,
+           'stroke': TREE2COLOR,
+           'fill': TREE2COLOR})
+    .text("AC");
+hist_svg.append('text')
+    .attr({'x': top_tri.x - 7,
+           'y': top_tri.y - 6,
+           'stroke': TREE1COLOR,
+           'fill': TREE1COLOR})
+    .text("AB");
 hist_svg.append('line')
     .attr({'x1': mid_left_tri.x,
            'y1': mid_left_tri.y,
