@@ -267,6 +267,35 @@ var nodeY = function(node)  {
   }
   return node.y_offset + node.y;
 };
+
+var LEFT_TEXT_OFFSET = 15;
+var RIGHT_TEXT_OFFSET = 5;
+var UP_TEXT_OFFSET = 3;
+var DOWN_TEXT_OFFSET = 15;
+var xForNodeText = function(node) {
+  if (node.index < 3) {
+    return node.x_offset + node.x - LEFT_TEXT_OFFSET
+  } else {
+    return node.x_offset + node.x + RIGHT_TEXT_OFFSET
+  }
+};
+
+var yForNodeText = function(node)  {
+  if (node.index == 1 || node.index == 4) {
+    return node.y_offset + node.y - UP_TEXT_OFFSET
+  } else {
+    return node.y_offset + node.y + DOWN_TEXT_OFFSET
+  }
+};
+
+var nodeText = function(node)  {
+  if (node.index == 0 || node.index == 3) {
+    return '';
+  } else {
+    return node.name;
+  }
+};
+
 var parNodeX = function(node) {
   var e = node.edge;
   if (e) {
@@ -400,8 +429,10 @@ var do_dragmove = function(node_data, dx, dy) {
 
 
 var refresh_nodes = function (svg_root) {
-  svg_root.selectAll('circle').data(g_nodes_obj[svg_root._tree])
+  svg_root.selectAll('circle')
   .attr({'cx': nodeX, 'cy': nodeY})
+  svg_root.selectAll('text')
+  .attr({'x': xForNodeText, 'y': yForNodeText})
 };
 var refresh_edges = function (svg_root) {
   svg_root.selectAll('line').data(g_edges_obj[svg_root._tree])
@@ -464,8 +495,11 @@ var init_tree_panel = function(o) {
            'stroke-width':4,
            'class': o.edge_class});
 
-  o.svg_root.selectAll('circle').data(o.node_array)
-    .enter().append('circle')
+  var dn = o.svg_root.selectAll('g')
+    .data(o.node_array)
+    .enter()
+    .append('g');
+  dn.append('circle')
     .attr({ 'cx': nodeX, 
             'cy': nodeY,
             'r': radius,
@@ -476,6 +510,9 @@ var init_tree_panel = function(o) {
             })
     .on("click", highlight_node)
     .call(drag);
+  dn.append('text')
+    .attr({"x": xForNodeText, "y": yForNodeText})
+    .text(nodeText);
 };
 
 init_tree_panel({'svg_root': tree1svg_root,
