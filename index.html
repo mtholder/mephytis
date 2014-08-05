@@ -559,11 +559,25 @@ var prob_vec = [0.25, 0.2, 0.15, 0.1, 0.1, 0.1, 0.05, 0.05,
                 0.25, 0.2, 0.15, 0.1, 0.1, 0.1, 0.05, 0.05,
                 0.25, 0.2, 0.15, 0.1, 0.1, 0.1, 0.05, 0.05];
 
+
+var show_trees = {'t1':true, 't2':true, 't3':true, }
 var HIST_BAR_X = 60;
 var HIST_WITHIN_PROB = HIST_HEIGHT/40;
 var HIST_BETWEEN_PROB = HIST_HEIGHT/8.5;
 var BAR_HEIGHT = 5;
 var PAD_STR = '0000';
+var fullProbIndexToTree = function (i) {
+  if (i < 8) {
+    return '';
+  }
+  if (i < 16) {
+    return 't1';
+  }
+  if (i < 24) {
+    return 't2';
+  }
+  return 't3';
+}
 var barY = function(data, i) {
   var group_offset = HIST_WITHIN_PROB*Math.floor(i/8);
   var prob_offset = HIST_BETWEEN_PROB*(i%8)
@@ -571,6 +585,10 @@ var barY = function(data, i) {
 };
 var barWidth = function(datum, i) {
   if (i < 8) {
+    return 0;
+  }
+  var tree = fullProbIndexToTree(i);
+  if (!show_trees[tree]){
     return 0;
   }
   return datum*(HIST_WIDTH - HIST_BAR_X);
@@ -672,6 +690,10 @@ var calc_probs_on_12v45_tree = function(node_array) {
           prob01_xx_10,
           prob01_xx_11]
 }
+
+var refresh_hist_bars = function() {
+  hist_bars.data(prob_vec).attr('width', barWidth);
+}
 var refresh_probabilities = function(tree) {
   var prob_offset_arr = tree2prob_offset[tree];
   var node_data = g_nodes_obj[tree];
@@ -681,14 +703,27 @@ var refresh_probabilities = function(tree) {
     var pvi = prob_offset_arr[i];
     prob_vec[pvi] = p[i];
   }
-  hist_bars.data(prob_vec).attr('width', barWidth);
+  refresh_hist_bars();
 }
 refresh_probabilities('t1');
 refresh_probabilities('t2');
 refresh_probabilities('t3');
+var toggleTree = function (tree) {
+  show_trees[tree] = ! show_trees[tree];
+  refresh_hist_bars();
+}
 
 $(document).ready(function() {
     $(document).keydown(function(e) {
+      var s = String.fromCharCode(e.keyCode);
+      if (s == 'q' || s == 'Q') {// q is under 1
+        toggleTree('t1');
+      } else if (s == 'w' || s == 'W') {// w is under 2
+        toggleTree('t2');
+      } else if (s == 'e' || s == 'E') {// e is under 3
+        toggleTree('t3');
+      }
+      
       if (g_curr_highlighted_selection) {
         var next_node;
         var dx, dy, move=false;
