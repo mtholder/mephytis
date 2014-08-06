@@ -45,7 +45,26 @@ and http://bl.ocks.org/mbostock/4063550
   <tr><td><div id="tree1svg"/></td><td><div id="hist"/></td></tr>
   <tr><td><div id="tree2svg"/></td><td><div id="tree3svg"/></td></tr>
 </table>
-
+<br /><br />
+<h3>Description</h3>
+<p>This widget shows how trees project into the space of relative pattern frequencies
+for the parsimony patterns only.
+The distance from the bottom of the triangle is proportional to the fraction of parsimony informative sites that support the tree AB|CD.
+The relative fraction of sites that support AC|BD is the distance from the right side of the triangle.
+<i>et cetera</i>.</p>
+<p>The pale green, blue, and red regions correspond to parts of the pattern frequency space that correspond to the tree of that color.
+This means, for example, that any dataset with pattern frequencies that place it in the green region of the space will favor the green tree (AB|CD).</p>
+<h3>Instructions</h3>
+<ol>
+  <li>Think about how changing a branch length would affect the frequency of a patterns for that tree.</li>
+  <li>Grab one of the nodes attached to the branch, and stretch or shrink the branch (<i>Note</i>: the left internal node of each tree cannot move)</li>
+  <li>See how the dot of the same color moves</li>
+</ol>
+<p><i>Note</i>: the branch lengths are the probability of change in a two-state model, so they are in the range [0, 0.5]. Most model-based phylogenetics uses branch lengths in terms of the expected number of changes per site (a transformation of these branch lengths).</p>
+<p><i>Note</i>: If a node is highlighted (from being clicked), the arrow keys will move it and TAB will advance the focus to another node in that tree.</p>
+<h3>Further Reading</h3>
+<p>See Kim (2000) for a great introduction to thinking about pattern frequency space</p>
+<p>Kim, Junhyong. "Slicing hyperdimensional oranges: the geometry of phylogenetic estimation." <i>Molecular phylogenetics and evolution</i> <b>17.1</b> (2000): 58-75.</p>
 <script>
 var TREE_WIDTH = 290;
 var TREE_HEIGHT = 220;
