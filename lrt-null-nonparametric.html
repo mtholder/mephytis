@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<!-- from http://bl.ocks.org/mbostock/4339083
+and http://bl.ocks.org/mbostock/4063550
+
+!-->
+<meta charset="utf-8">
+<style>
+
+.node circle {
+  fill: #fff;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+
+.node {
+  font: 10px sans-serif;
+}
+
+.link {
+  fill: none;
+  stroke: #ccc;
+  stroke-width: 1.5px;
+}
+#tree1par {
+  vertical-align: top;
+  float: left;
+}
+#tree2par {
+  vertical-align: center;
+  float: left;
+}
+#tree3par {
+  vertical-align: bottom;
+  float: left;
+}
+#histpar {
+  vertical-align: top;
+  float: right;
+}
+</style>
+<body>
+<script src="d3/d3.v3.min.js"></script>
+<script src="jquery/jquery.v2.min.js"></script>
+<div>
+<h2><b>Figure 1</b> the relationship between the per-site LRT and the <it>P</it>-value in a hypothetical case.</h2>
+<p>Consider the case of a dataset which has 1000 characters 
+(or sites in a sequence alignment) and the alternative tree has a
+log-likelihood that is 5.0 higher than the null hypothesized tree.
+If we do not use asymptotic assumptions to connect the 2*(the difference in log-likelihoods) to 
+the chi-square distribution, then try to infer a null distribution based on the per-site
+differences in log-likelihoods.</p>
+<p>
+If we construct the null distribution in this way, we find that the variability of the support
+across characters if very important to assessing the statistical significance of a log-likelihood difference.
+</p>
+<p>
+Typically we want to test a null hypothesis that the two trees are equally good explanations of the data.
+Thus under the null, the expected mean difference log-likelihoods per-site should be 0.
+So, if we have a method of producing a plausible amount of variability in the per-site log-likelihood
+differences, we can generate a null distribution at the per-site level.
+</p><p id="sampletext">
+Because the total difference in log-likelhoods is simply the sum of the differences for all sites, we can
+get the null distribution of the total log-likelihood difference from the per-site null distribution.
+</p>
+</div>
+<table>
+  <tr>
+    <td>
+      <label for="abCount" id="var">
+          <font id="idFont">Variability of log-likelihood differences across sites:</font>
+      </label>
+      <select name="varselect" id="varselect">
+          <option value="novar"i selected="selected">All site differences = 0.05</option>
+          <option value="onesite">One site differs by 5.00</option>
+          <option value="conflict">One site diff = 0; 500 sites = +5; 499 sites = -5.0</option>
+      </select>
+    </td>
+  </tr>
+  <tr><td><span id="per-site-diff-dist"></span></td></tr>
+  <tr>
+    <td>
+      <label for="abCount" id="abLabel">
+          <font id="idFont">Method of centering to per-site difference to have expectation of 0:</font>
+      </label>
+      <select name="centerSelect" id="centerSelect">
+          <option value="slide">subtract mean</option>
+          <option value="reflect">append "mirror image" dataset</option>
+      </select>
+    </td>
+  </tr>
+  <tr><td>
+          <input name="boot" type="button" value="generate null distributions" onclick="genNull()" />
+  </td></tr>
+  <tr><td><span id="null-per-site-diff-dist"></span></td></tr>
+      <br/>
+      <p id="abBootText" />
+      <br/>
+      <p id="acBootText" />
+      <br/>
+      <p id="adBootText" />
+        </td><td><div id="hist"/></td></tr>
+</table>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<p> Thanks to <a href="http://bl.ocks.org/mbostock/3048450">http://bl.ocks.org/mbostock/3048450</a></p>.
+<script>
+var PER_SITE_WIDTH = 400;
+var PER_SITE_HEIGHT = 180;
+var total_diff = 5.0;
+var num_char = 100;
+var ps_groups_zero_to_five = 250;
+var ps_num_bins = 2*ps_groups_zero_to_five + 1;
+var no_var_data = [];
+var one_site_data = [];
+var conflict_data = [];
+var i = 0;
+var tol = 0.0;
+var count_offset = total_diff + tol
+for (i = 0; i < num_char; ++i) {
+    no_var_data[i] = count_offset + (total_diff / num_char);
+}
+for (i = 0; i < num_char - 1; ++i) {
+    one_site_data[i] = count_offset;
+}
+one_site_data[num_char - 1] = count_offset + total_diff;
+var half_num_char = num_char/2;
+for (i = 0; i < half_num_char; ++i) {
+    conflict_data[i] = count_offset + total_diff;
+}
+for (i = half_num_char; i < num_char - 1; ++i) {
+    conflict_data[i] = count_offset - total_diff;
+}
+conflict_data[num_char - 1] = count_offset + 0.0;
+var margin = {top: 10, right: 10, bottom: 20, left: 15}
+var width = PER_SITE_WIDTH - margin.left - margin.right;
+var height = PER_SITE_HEIGHT - margin.top - margin.bottom;
+var ps_x = d3.scale.linear()
+    .domain([0, 2*total_diff + tol])
+    .range([0, width]);
+var thresholds = [];
+var bin_w = (2*total_diff)/ps_num_bins;
+var min_x = 0;
+var curr_thres = min_x;
+for (i = 0; i < ps_num_bins + 1 ; ++i) {
+    thresholds[i] = curr_thres;
+    curr_thres += bin_w;
+}
+var os_data = d3.layout.histogram().bins(thresholds)(one_site_data);
+var nv_data = d3.layout.histogram().bins(thresholds)(no_var_data);
+var conf_data = d3.layout.histogram().bins(thresholds)(conflict_data);
+var ps_y = d3.scale.linear()
+    .domain([0, num_char])
+    .range([height, 0]);
+var ps_x_axis = d3.svg.axis()
+    .scale(ps_x)
+    .orient("bottom");
+
+var hist_svg = null;
+var fill_per_site_hist = function(hist_data) {
+    
+    if (hist_svg != null) {
+        hist_svg.remove();
+        hist_svg = null;
+    }
+    d3.select('#per-site-diff-dist').selectAll("*").remove();
+    hist_svg = d3.select('#per-site-diff-dist').append('svg')
+        .attr("width", PER_SITE_WIDTH)
+        .attr("height", PER_SITE_HEIGHT)
+      .append("g")
+        .attr('transform', "translate(" + margin.left + "," + margin.top + ")");
+    var bar = hist_svg.selectAll(".bar")
+        .data(hist_data)
+      .enter().append("g")
+        .attr("class", "bar")
+        .attr("transform", function(d) { return "translate(" + ps_x(d.x) + "," + ps_y(d.y) + ")"; });
+    bar.append("rect")
+        .attr("x", 1)
+        .attr("width", ps_x(nv_data[0].dx))
+        .attr("height", function(d) { return height - ps_y(d.y); });
+    /*
+       `bar.transition().duration(500)
+        .attr("class", "bar")
+        .attr("transform", function(d) { return "translate(" + ps_x(d.x) + "," + ps_y(d.y) + ")"; })
+        .selectAll("svg.rect")
+        .attr("width", 1)
+        .attr("height", function(d) { return height - ps_y(d.y); });
+    var b = bar.exit();
+    var c = b.transition().duration(500);
+    var d = c.selectAll("svg:rect")
+        .attr("height", 0);
+    var e = d.remove();
+    */
+    hist_svg.append("text")
+        .attr("x", width/2)
+        .attr("y", height)
+        .attr("dy", "1.0em")
+        .attr("text-anchor", "middle")
+        .text("0.0");
+    hist_svg.append("text")
+        .attr("x", 0)
+        .attr("y", height)
+        .attr("dy", "1.0em")
+        .attr("text-anchor", "middle")
+        .text("-5.0");
+    hist_svg.append("text")
+        .attr("x", width)
+        .attr("y", height)
+        .attr("dy", "1.0em")
+        .attr("text-anchor", "middle")
+        .text("5.0");
+}
+fill_per_site_hist(nv_data);
+$('#varselect').change(function () {
+    var choice = $("#varselect option:selected").attr("value");
+    if (choice == "novar") {
+        fill_per_site_hist(nv_data);
+    } else if (choice == "conflict") {
+        fill_per_site_hist(conf_data);
+    } else {
+        fill_per_site_hist(os_data);
+    }
+    $("div").text(choice);
+    }).change();
+</script>
