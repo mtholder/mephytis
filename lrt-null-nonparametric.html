@@ -315,11 +315,15 @@ var create_null_dist_svg = function(par_el, hist_data, x_axis, y_axis, zo) {
         .attr("height", PER_SITE_HEIGHT)
       .append("g")
         .attr('transform', "translate(" + margin.left + "," + margin.top + ")");
+    var color = d3.scale.threshold()
+        .domain([(zo - total_diff), (zo + total_diff)])
+        .range(['#FF0000', '#000000', '#FF0000'])
     var bar = hist_svg.selectAll(".bar")
         .data(hist_data)
       .enter().append("g")
         .attr("class", "bar")
-        .attr("transform", function(d) { return "translate(" + x_axis(d.x) + "," + y_axis(d.y) + ")"; });
+        .attr("transform", function(d) { return "translate(" + x_axis(d.x) + "," + y_axis(d.y) + ")"; })
+        .attr("fill", function(d) {return color(d.x);})
     bar.append("rect")
         .attr("x", 1)
         .attr("width", x_axis(hist_data[0].dx))
