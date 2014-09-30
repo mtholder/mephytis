@@ -43,7 +43,7 @@ and http://bl.ocks.org/mbostock/4063550
 <script src="jquery/jquery.v2.min.js"></script>
 <div>
 <h2><b>Figure 1</b> the relationship between the per-site LRT and the <it>P</it>-value in a hypothetical case.</h2>
-<p>Consider the case of a dataset which has 1000 characters 
+<p>Consider the case of a dataset which has <span class="nc">100</span> characters 
 (or sites in a sequence alignment) and the alternative tree has a
 log-likelihood that is 5.0 higher than the null hypothesized tree.
 If we do not use asymptotic assumptions to connect the 2*(the difference in log-likelihoods) to 
@@ -109,10 +109,12 @@ var width = PER_SITE_WIDTH - margin.left - margin.right;
 var height = PER_SITE_HEIGHT - margin.top - margin.bottom;
 
 var total_diff = 5.0;
-var num_char = 50;
+var num_char = 100;
+var round_tol = 0.00001;
 
 var orig_mean_ps = total_diff / num_char;
 var half_num_char = num_char/2;
+$(".nc").text("" + num_char);
 $("#novar").text("All sites' differences = " + orig_mean_ps.toPrecision(3));
 $("#onesite").text("" + (num_char - 1) + " sites with diff.=0 and one with diff.=" + total_diff.toPrecision(1));
 $("#conflict").text("One site w/ diff.=0; " 
@@ -302,7 +304,7 @@ var do_simulation_of_null = function(per_site_values,
         realization_text_el.text(" " + realized_sc.toPrecision(2));
         append_hist_svg(ps_par_el, realization_histdata, ps_x_axis, ps_y_axis, ps_zo);
         null_array[rep] = realized_sc + null_zero;
-        if (Math.abs(realized_sc) >= Math.abs(total_diff)) {
+        if (Math.abs(realized_sc) >= Math.abs(total_diff) - round_tol) {
             num_in_tail = 1 + num_in_tail;
         }
         num_reps_el.text("" + (rep + 1));
@@ -329,7 +331,7 @@ var create_null_dist_svg = function(par_el, hist_data, x_axis, y_axis, zo) {
       .append("g")
         .attr('transform', "translate(" + margin.left + "," + margin.top + ")");
     var color = d3.scale.threshold()
-        .domain([(zo - total_diff), (zo + total_diff)])
+        .domain([(zo - total_diff + round_tol), (zo + total_diff - round_tol)])
         .range(['#FF0000', '#000000', '#FF0000'])
     var bar = hist_svg.selectAll(".bar")
         .data(hist_data)
