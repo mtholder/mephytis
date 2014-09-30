@@ -70,77 +70,70 @@ get the null distribution of the total log-likelihood difference from the per-si
           <font id="idFont">Variability of log-likelihood differences across sites:</font>
       </label>
       <select name="varselect" id="varselect">
-          <option value="novar"i selected="selected">All site differences = 0.05</option>
-          <option value="onesite">One site differs by 5.00</option>
-          <option value="conflict">One site diff = 0; 500 sites = +5; 499 sites = -5.0</option>
+          <option id="novar" value="novar" selected="selected">All site differences = 0.05</option>
+          <option id="onesite" value="onesite">One site differs by 5.00</option>
+          <option id="conflict" value="conflict">One site diff = 0; 500 sites = +5; 499 sites = -5.0</option>
       </select>
     </td>
   </tr>
   <tr><td><span id="per-site-diff-dist"></span></td></tr>
   <tr>
     <td>
-      <label for="abCount" id="abLabel">
-          <font id="idFont">Method of centering to per-site difference to have expectation of 0:</font>
-      </label>
+      <label for="centerLabel" id="centerLabel"> <font id="idFont">Method of centering to per-site difference to have expectation of 0:</font></label>
       <select name="centerSelect" id="centerSelect">
           <option value="slide">subtract mean</option>
           <option value="reflect">append "mirror image" dataset</option>
       </select>
     </td>
   </tr>
+  <tr><td><span id="per-site-null-dist"></span></td></tr>
   <tr><td>
           <input name="boot" type="button" value="generate null distributions" onclick="genNull()" />
   </td></tr>
   <tr><td><span id="null-per-site-diff-dist"></span></td></tr>
       <br/>
-      <p id="abBootText" />
-      <br/>
-      <p id="acBootText" />
-      <br/>
-      <p id="adBootText" />
         </td><td><div id="hist"/></td></tr>
 </table>
-<br/>
-<br/>
-<br/>
-<br/>
-<br/>
-<br/>
-<br/>
-<br/>
-<br/>
-<p> Thanks to <a href="http://bl.ocks.org/mbostock/3048450">http://bl.ocks.org/mbostock/3048450</a></p>.
+<br/> <br/> <br/> <br/> <br/> <br/> <br/> <br/> <br/> <p> Thanks to <a href="http://bl.ocks.org/mbostock/3048450">http://bl.ocks.org/mbostock/3048450</a></p>.
 <script>
 var PER_SITE_WIDTH = 400;
 var PER_SITE_HEIGHT = 180;
+var margin = {top: 10, right: 10, bottom: 20, left: 15}
+var width = PER_SITE_WIDTH - margin.left - margin.right;
+var height = PER_SITE_HEIGHT - margin.top - margin.bottom;
+
 var total_diff = 5.0;
-var num_char = 100;
+var num_char = 50;
+
+var orig_mean_ps = total_diff / num_char;
+var half_num_char = num_char/2;
+$("#novar").text("All sites' differences = " + orig_mean_ps.toPrecision(3));
+$("#onesite").text("" + (num_char - 1) + " sites with diff.=0 and one with diff.=" + total_diff.toPrecision(1));
+$("#conflict").text("One site w/ diff.=0; " 
+                    + half_num_char +  " with diff.=" + (total_diff/num_char).toPrecision(1)
+                    + "; and " + (half_num_char - 1) + " with diff.=" + (-total_diff/num_char).toPrecision(1));
 var ps_groups_zero_to_five = 250;
 var ps_num_bins = 2*ps_groups_zero_to_five + 1;
 var no_var_data = [];
 var one_site_data = [];
 var conflict_data = [];
 var i = 0;
-var tol = 0.0;
-var count_offset = total_diff + tol
+var tol = orig_mean_ps;
+var zero_offset = total_diff + tol
 for (i = 0; i < num_char; ++i) {
-    no_var_data[i] = count_offset + (total_diff / num_char);
+    no_var_data[i] = zero_offset + orig_mean_ps;
 }
 for (i = 0; i < num_char - 1; ++i) {
-    one_site_data[i] = count_offset;
+    one_site_data[i] = zero_offset;
 }
-one_site_data[num_char - 1] = count_offset + total_diff;
-var half_num_char = num_char/2;
+one_site_data[num_char - 1] = zero_offset + total_diff;
 for (i = 0; i < half_num_char; ++i) {
-    conflict_data[i] = count_offset + total_diff;
+    conflict_data[i] = zero_offset + total_diff;
 }
 for (i = half_num_char; i < num_char - 1; ++i) {
-    conflict_data[i] = count_offset - total_diff;
+    conflict_data[i] = zero_offset - total_diff;
 }
-conflict_data[num_char - 1] = count_offset + 0.0;
-var margin = {top: 10, right: 10, bottom: 20, left: 15}
-var width = PER_SITE_WIDTH - margin.left - margin.right;
-var height = PER_SITE_HEIGHT - margin.top - margin.bottom;
+conflict_data[num_char - 1] = zero_offset + 0.0;
 var ps_x = d3.scale.linear()
     .domain([0, 2*total_diff + tol])
     .range([0, width]);
@@ -161,16 +154,62 @@ var ps_y = d3.scale.linear()
 var ps_x_axis = d3.svg.axis()
     .scale(ps_x)
     .orient("bottom");
+/* data for two ways of getting a null per-site for the no-variation data*/
+var subtract_nv_data = [];
+var reflect_nv_data = [];
+for (i = 0; i < num_char; ++i) {
+    subtract_nv_data[i] = zero_offset;
+}
+for (i = 0; i < num_char; ++i) {
+    reflect_nv_data[i] = zero_offset + orig_mean_ps;
+}
+for (i = num_char; i < 2*num_char; ++i) {
+    reflect_nv_data[i] = zero_offset - orig_mean_ps;
+}
 
-var hist_svg = null;
+/* data for two ways of getting a null per-site for the one-site data */
+var subtract_os_data = [];
+var reflect_os_data = [];
+for (i = 0; i < num_char - 1; ++i) {
+    subtract_os_data[i] = zero_offset - orig_mean_ps;
+}
+subtract_os_data[num_char - 1] = zero_offset + total_diff - orig_mean_ps;
+for (i = 0; i < 2*num_char - 2; ++i) {
+    reflect_os_data[i] = zero_offset;
+}
+reflect_os_data[2*num_char - 2] = zero_offset + total_diff;
+reflect_os_data[2*num_char - 1] = zero_offset - total_diff;
+
+/* data for two ways of getting a null per-site for the conflict data */
+var subtract_co_data = [];
+var reflect_co_data = [];
+for (i = 0; i < half_num_char - 1; ++i) {
+    subtract_co_data[i] = zero_offset - total_diff - orig_mean_ps;
+}
+subtract_os_data[half_num_char - 1] = zero_offset - orig_mean_ps;
+for (i = half_num_char; i < num_char; ++i) {
+    subtract_co_data[i] = zero_offset + total_diff - orig_mean_ps;
+}
+for (i = 0; i < num_char - 1; ++i) {
+    reflect_co_data[i] = zero_offset - total_diff;
+}
+reflect_co_data[num_char - 1] = zero_offset;
+reflect_co_data[num_char] = zero_offset;
+for (i = num_char + 1; i < num_char; ++i) {
+    reflect_co_data[i] = zero_offset + total_diff;
+}
+
 var fill_per_site_hist = function(hist_data) {
-    
-    if (hist_svg != null) {
-        hist_svg.remove();
-        hist_svg = null;
-    }
-    d3.select('#per-site-diff-dist').selectAll("*").remove();
-    hist_svg = d3.select('#per-site-diff-dist').append('svg')
+    var par_el = d3.select('#per-site-diff-dist');
+    append_hist_svg(par_el, hist_data);
+}
+var fill_per_site_null = function(null_data) {
+    var par_el = d3.select('#null-per-site-diff-dist');
+    append_hist_svg(par_el, null_data);
+}
+var append_hist_svg = function(par_el, hist_data) {
+    par_el.selectAll("*").remove();
+    hist_svg = par_el.append('svg')
         .attr("width", PER_SITE_WIDTH)
         .attr("height", PER_SITE_HEIGHT)
       .append("g")
@@ -184,27 +223,17 @@ var fill_per_site_hist = function(hist_data) {
         .attr("x", 1)
         .attr("width", ps_x(nv_data[0].dx))
         .attr("height", function(d) { return height - ps_y(d.y); });
-    /*
-       `bar.transition().duration(500)
-        .attr("class", "bar")
-        .attr("transform", function(d) { return "translate(" + ps_x(d.x) + "," + ps_y(d.y) + ")"; })
-        .selectAll("svg.rect")
-        .attr("width", 1)
-        .attr("height", function(d) { return height - ps_y(d.y); });
-    var b = bar.exit();
-    var c = b.transition().duration(500);
-    var d = c.selectAll("svg:rect")
-        .attr("height", 0);
-    var e = d.remove();
-    */
+    add_x_axis(hist_svg);
+}
+var add_x_axis = function(hist_svg) {
     hist_svg.append("text")
-        .attr("x", width/2)
+        .attr("x", width*(total_diff + tol)/(2*total_diff + tol))
         .attr("y", height)
         .attr("dy", "1.0em")
         .attr("text-anchor", "middle")
         .text("0.0");
     hist_svg.append("text")
-        .attr("x", 0)
+        .attr("x", tol)
         .attr("y", height)
         .attr("dy", "1.0em")
         .attr("text-anchor", "middle")
@@ -217,6 +246,7 @@ var fill_per_site_hist = function(hist_data) {
         .text("5.0");
 }
 fill_per_site_hist(nv_data);
+fill_per_site_null(subtract_nv_data);
 $('#varselect').change(function () {
     var choice = $("#varselect option:selected").attr("value");
     if (choice == "novar") {
@@ -226,6 +256,5 @@ $('#varselect').change(function () {
     } else {
         fill_per_site_hist(os_data);
     }
-    $("div").text(choice);
-    }).change();
+    });
 </script>
