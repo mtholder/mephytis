@@ -76,21 +76,21 @@ get the null distribution of the total log-likelihood difference from the per-si
       </select>
     </td>
   </tr>
+  <tr><td>Distribution of per-site differences:</td></tr>
   <tr><td><span id="per-site-diff-dist"></span></td></tr>
   <tr>
     <td>
       <label for="centerLabel" id="centerLabel"> <font id="idFont">Method of centering to per-site difference to have expectation of 0:</font></label>
-      <select name="centerSelect" id="centerSelect">
-          <option value="slide">subtract mean</option>
-          <option value="reflect">append "mirror image" dataset</option>
+      <select name="centerselect" id="centerselect">
+          <option id="subtract" value="subtract" selected="selected">subtract mean</option>
+          <option id="reflect" value="reflect">append "mirror image" dataset</option>
       </select>
     </td>
   </tr>
-  <tr><td><span id="per-site-null-dist"></span></td></tr>
+  <tr><td><span id="null-per-site-diff-dist"></span></td></tr>
   <tr><td>
           <input name="boot" type="button" value="generate null distributions" onclick="genNull()" />
   </td></tr>
-  <tr><td><span id="null-per-site-diff-dist"></span></td></tr>
       <br/>
         </td><td><div id="hist"/></td></tr>
 </table>
@@ -114,29 +114,27 @@ $("#conflict").text("One site w/ diff.=0; "
                     + "; and " + (half_num_char - 1) + " with diff.=" + (-total_diff/num_char).toPrecision(1));
 var ps_groups_zero_to_five = 250;
 var ps_num_bins = 2*ps_groups_zero_to_five + 1;
-var no_var_data = [];
-var one_site_data = [];
-var conflict_data = [];
+var no_var_values = [];
+var one_site_values = [];
+var conflict_values = [];
 var i = 0;
 var tol = orig_mean_ps;
 var zero_offset = total_diff + tol
 for (i = 0; i < num_char; ++i) {
-    no_var_data[i] = zero_offset + orig_mean_ps;
+    no_var_values[i] = zero_offset + orig_mean_ps;
 }
 for (i = 0; i < num_char - 1; ++i) {
-    one_site_data[i] = zero_offset;
+    one_site_values[i] = zero_offset;
 }
-one_site_data[num_char - 1] = zero_offset + total_diff;
+one_site_values[num_char - 1] = zero_offset + total_diff;
 for (i = 0; i < half_num_char; ++i) {
-    conflict_data[i] = zero_offset + total_diff;
+    conflict_values[i] = zero_offset + total_diff;
 }
 for (i = half_num_char; i < num_char - 1; ++i) {
-    conflict_data[i] = zero_offset - total_diff;
+    conflict_values[i] = zero_offset - total_diff;
 }
-conflict_data[num_char - 1] = zero_offset + 0.0;
-var ps_x = d3.scale.linear()
-    .domain([0, 2*total_diff + tol])
-    .range([0, width]);
+conflict_values[num_char - 1] = zero_offset + 0.0;
+var ps_x = d3.scale.linear().domain([0, 2*total_diff + tol]).range([0, width]);
 var thresholds = [];
 var bin_w = (2*total_diff)/ps_num_bins;
 var min_x = 0;
@@ -145,69 +143,73 @@ for (i = 0; i < ps_num_bins + 1 ; ++i) {
     thresholds[i] = curr_thres;
     curr_thres += bin_w;
 }
-var os_data = d3.layout.histogram().bins(thresholds)(one_site_data);
-var nv_data = d3.layout.histogram().bins(thresholds)(no_var_data);
-var conf_data = d3.layout.histogram().bins(thresholds)(conflict_data);
-var ps_y = d3.scale.linear()
-    .domain([0, num_char])
-    .range([height, 0]);
-var ps_x_axis = d3.svg.axis()
-    .scale(ps_x)
-    .orient("bottom");
+var os_histdata = d3.layout.histogram().bins(thresholds)(one_site_values);
+var nv_histdata = d3.layout.histogram().bins(thresholds)(no_var_values);
+var conf_histdata = d3.layout.histogram().bins(thresholds)(conflict_values);
+var ps_y = d3.scale.linear().domain([0, num_char]).range([height, 0]);
+var ps_x_axis = d3.svg.axis().scale(ps_x).orient("bottom");
 /* data for two ways of getting a null per-site for the no-variation data*/
-var subtract_nv_data = [];
-var reflect_nv_data = [];
+var subtract_nv_values = [];
+var reflect_nv_values = [];
 for (i = 0; i < num_char; ++i) {
-    subtract_nv_data[i] = zero_offset;
+    subtract_nv_values[i] = zero_offset;
 }
 for (i = 0; i < num_char; ++i) {
-    reflect_nv_data[i] = zero_offset + orig_mean_ps;
+    reflect_nv_values[i] = zero_offset + orig_mean_ps;
 }
 for (i = num_char; i < 2*num_char; ++i) {
-    reflect_nv_data[i] = zero_offset - orig_mean_ps;
+    reflect_nv_values[i] = zero_offset - orig_mean_ps;
 }
 
 /* data for two ways of getting a null per-site for the one-site data */
-var subtract_os_data = [];
-var reflect_os_data = [];
+var subtract_os_values = [];
+var reflect_os_values = [];
 for (i = 0; i < num_char - 1; ++i) {
-    subtract_os_data[i] = zero_offset - orig_mean_ps;
+    subtract_os_values[i] = zero_offset - orig_mean_ps;
 }
-subtract_os_data[num_char - 1] = zero_offset + total_diff - orig_mean_ps;
+subtract_os_values[num_char - 1] = zero_offset + total_diff - orig_mean_ps;
 for (i = 0; i < 2*num_char - 2; ++i) {
-    reflect_os_data[i] = zero_offset;
+    reflect_os_values[i] = zero_offset;
 }
-reflect_os_data[2*num_char - 2] = zero_offset + total_diff;
-reflect_os_data[2*num_char - 1] = zero_offset - total_diff;
+reflect_os_values[2*num_char - 2] = zero_offset + total_diff;
+reflect_os_values[2*num_char - 1] = zero_offset - total_diff;
 
 /* data for two ways of getting a null per-site for the conflict data */
-var subtract_co_data = [];
-var reflect_co_data = [];
+var subtract_co_values = [];
+var reflect_co_values = [];
 for (i = 0; i < half_num_char - 1; ++i) {
-    subtract_co_data[i] = zero_offset - total_diff - orig_mean_ps;
+    subtract_co_values[i] = zero_offset - total_diff - orig_mean_ps;
 }
-subtract_os_data[half_num_char - 1] = zero_offset - orig_mean_ps;
+subtract_co_values[half_num_char - 1] = zero_offset - orig_mean_ps;
 for (i = half_num_char; i < num_char; ++i) {
-    subtract_co_data[i] = zero_offset + total_diff - orig_mean_ps;
+    subtract_co_values[i] = zero_offset + total_diff - orig_mean_ps;
 }
 for (i = 0; i < num_char - 1; ++i) {
-    reflect_co_data[i] = zero_offset - total_diff;
+    reflect_co_values[i] = zero_offset - total_diff;
 }
-reflect_co_data[num_char - 1] = zero_offset;
-reflect_co_data[num_char] = zero_offset;
-for (i = num_char + 1; i < num_char; ++i) {
-    reflect_co_data[i] = zero_offset + total_diff;
+reflect_co_values[num_char - 1] = zero_offset;
+reflect_co_values[num_char] = zero_offset;
+for (i = num_char + 1; i < 2*num_char; ++i) {
+    reflect_co_values[i] = zero_offset + total_diff;
 }
+/* reflect form of enforcing a mean of 0, creates twice as many chars */
+var ref_ps_y = d3.scale.linear().domain([0, 2*num_char]).range([height, 0]);
+var subtract_nv_histdata = d3.layout.histogram().bins(thresholds)(subtract_nv_values);
+var reflect_nv_histdata = d3.layout.histogram().bins(thresholds)(reflect_nv_values);
+var subtract_os_histdata = d3.layout.histogram().bins(thresholds)(subtract_os_values);
+var reflect_os_histdata = d3.layout.histogram().bins(thresholds)(reflect_os_values);
+var subtract_co_histdata = d3.layout.histogram().bins(thresholds)(subtract_co_values);
+var reflect_co_histdata = d3.layout.histogram().bins(thresholds)(reflect_co_values);
 
-var fill_per_site_hist = function(hist_data) {
+var fill_per_site_hist = function(hist_data, y_axis) {
     var par_el = d3.select('#per-site-diff-dist');
-    append_hist_svg(par_el, hist_data);
+    append_hist_svg(par_el, hist_data, y_axis);
 }
-var fill_per_site_null = function(null_data) {
+var fill_per_site_null = function(null_data, y_axis) {
     var par_el = d3.select('#null-per-site-diff-dist');
-    append_hist_svg(par_el, null_data);
+    append_hist_svg(par_el, null_data, y_axis);
 }
-var append_hist_svg = function(par_el, hist_data) {
+var append_hist_svg = function(par_el, hist_data, y_axis) {
     par_el.selectAll("*").remove();
     hist_svg = par_el.append('svg')
         .attr("width", PER_SITE_WIDTH)
@@ -218,11 +220,11 @@ var append_hist_svg = function(par_el, hist_data) {
         .data(hist_data)
       .enter().append("g")
         .attr("class", "bar")
-        .attr("transform", function(d) { return "translate(" + ps_x(d.x) + "," + ps_y(d.y) + ")"; });
+        .attr("transform", function(d) { return "translate(" + ps_x(d.x) + "," + y_axis(d.y) + ")"; });
     bar.append("rect")
         .attr("x", 1)
-        .attr("width", ps_x(nv_data[0].dx))
-        .attr("height", function(d) { return height - ps_y(d.y); });
+        .attr("width", ps_x(hist_data[0].dx))
+        .attr("height", function(d) { return height - y_axis(d.y); });
     add_x_axis(hist_svg);
 }
 var add_x_axis = function(hist_svg) {
@@ -245,16 +247,34 @@ var add_x_axis = function(hist_svg) {
         .attr("text-anchor", "middle")
         .text("5.0");
 }
-fill_per_site_hist(nv_data);
-fill_per_site_null(subtract_nv_data);
-$('#varselect').change(function () {
-    var choice = $("#varselect option:selected").attr("value");
-    if (choice == "novar") {
-        fill_per_site_hist(nv_data);
-    } else if (choice == "conflict") {
-        fill_per_site_hist(conf_data);
+fill_per_site_hist(nv_histdata, ps_y);
+fill_per_site_null(subtract_nv_histdata, ps_y);
+var dist_change = function () {
+    var vchoice = $("#varselect option:selected").attr("value");
+    var cchoice = $("#centerselect option:selected").attr("value");
+    if (vchoice == "novar") {
+        fill_per_site_hist(nv_histdata, ps_y);
+        if (cchoice == "subtract") {
+            fill_per_site_null(subtract_nv_histdata, ps_y);
+        } else {
+            fill_per_site_null(reflect_nv_histdata, ref_ps_y);
+       }
+    } else if (vchoice == "conflict") {
+        fill_per_site_hist(conf_histdata, ps_y);
+        if (cchoice == "subtract") {
+            fill_per_site_null(subtract_co_histdata, ps_y);
+        } else {
+            fill_per_site_null(reflect_co_histdata, ref_ps_y);
+       }
     } else {
-        fill_per_site_hist(os_data);
+        fill_per_site_hist(os_histdata, ps_y);
+        if (cchoice == "subtract") {
+            fill_per_site_null(subtract_os_histdata, ps_y);
+        } else {
+            fill_per_site_null(reflect_os_histdata, ref_ps_y);
+       }
     }
-    });
+};
+$('#varselect').change(dist_change);
+$('#centerselect').change(dist_change);
 </script>
