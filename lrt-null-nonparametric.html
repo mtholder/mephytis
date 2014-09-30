@@ -149,19 +149,32 @@ for (i = 0; i < ps_num_bins + 1 ; ++i) {
     thresholds[i] = curr_thres;
     curr_thres += bin_w;
 }
-var null_thresh = [];
-var tf = 4;
-var null_zero_offset = tf*total_diff;
+var os_null_thresh = [];
+var os_tf = 3;
+var os_null_zero_offset = os_tf*total_diff;
 var m = 10;
 bin_w = total_diff/m;
 curr_thresh = 0;
 i = 0;
-while (curr_thresh < 2*null_zero_offset) {
-    null_thresh[i] = curr_thresh;
+while (curr_thresh < 2*os_null_zero_offset) {
+    os_null_thresh[i] = curr_thresh;
     curr_thresh += bin_w;
     i += 1;
 }
-var null_x_axis = d3.scale.linear().domain([0, 2*null_zero_offset]).range([0, width]);
+var os_null_x_axis = d3.scale.linear().domain([0, 2*os_null_zero_offset]).range([0, width]);
+var co_null_thresh = [];
+var co_tf = 16;
+var co_null_zero_offset = co_tf*total_diff;
+var m = 5;
+bin_w = total_diff/m;
+curr_thresh = 0;
+i = 0;
+while (curr_thresh < 2*co_null_zero_offset) {
+    co_null_thresh[i] = curr_thresh;
+    curr_thresh += bin_w;
+    i += 1;
+}
+var co_null_x_axis = d3.scale.linear().domain([0, 2*co_null_zero_offset]).range([0, width]);
 var num_sim_realizations = 1000;
 
 
@@ -409,14 +422,14 @@ var generate_null = function () {
     var vchoice = $("#varselect option:selected").attr("value");
     var cchoice = $("#centerselect option:selected").attr("value");
     var null_src_values = null;
-    var n_x = null_x_axis;
     var ps_y_axis = ref_ps_y;
     if (cchoice == "subtract") {
         ps_y_axis = ps_y;
     }
     var n_y = d3.scale.linear().domain([0, num_sim_realizations/4]).range([height, 0]);
-    var null_thresholds = null_thresh;
-    var nz = null_zero_offset;
+    var null_thresholds = os_null_thresh;
+    var n_x = os_null_x_axis;
+    var nz = os_null_zero_offset;
     if (vchoice == "novar") {
         n_x = ps_x;
         null_thresholds = thresholds;
@@ -429,6 +442,9 @@ var generate_null = function () {
             n_y = d3.scale.linear().domain([0, num_sim_realizations/6]).range([height, 0]);
         }
     } else if (vchoice == "conflict") {
+        null_thresholds = co_null_thresh;
+        n_x = co_null_x_axis;
+        nz = co_null_zero_offset;
         if (cchoice == "subtract") {
             null_src_values = subtract_co_values;
         } else {
