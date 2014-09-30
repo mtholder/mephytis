@@ -89,16 +89,22 @@ get the null distribution of the total log-likelihood difference from the per-si
   </tr>
   <tr><td><span id="null-per-site-diff-dist"></span></td></tr>
   <tr><td>
-          <input name="boot" type="button" value="generate null distributions" onclick="genNull()" />
+          <input name="boot" type="button" value="generate null distributions" onclick="generate_null()" />
   </td></tr>
-      <br/>
-        </td><td><div id="hist"/></td></tr>
+  <tr><td><span id="null-realization-dist"></span></td></tr>
+  <tr><td><span id="null-realization-sample-label">Simulated from null. Difference = </span>
+          <span id="null-realization-sample-value"></span></td></tr>
+  <tr><td><span id="null-dist"></span></td></tr>
+  <tr><td><span id="p-value-pref">Based on </span>
+          <span id="num-reps">0</span>
+          <span id="p-value-label">replicates, the approximate <it>P</it>-value = </span>
+          <span id="p-value">?</span></td></tr>
 </table>
 <br/> <br/> <br/> <br/> <br/> <br/> <br/> <br/> <br/> <p> Thanks to <a href="http://bl.ocks.org/mbostock/3048450">http://bl.ocks.org/mbostock/3048450</a></p>.
 <script>
 var PER_SITE_WIDTH = 400;
 var PER_SITE_HEIGHT = 180;
-var margin = {top: 10, right: 10, bottom: 20, left: 15}
+var margin = {top: 10, right: 10, bottom: 35, left: 15}
 var width = PER_SITE_WIDTH - margin.left - margin.right;
 var height = PER_SITE_HEIGHT - margin.top - margin.bottom;
 
@@ -143,6 +149,22 @@ for (i = 0; i < ps_num_bins + 1 ; ++i) {
     thresholds[i] = curr_thres;
     curr_thres += bin_w;
 }
+var null_thresh = [];
+var tf = 4;
+var null_zero_offset = tf*total_diff;
+var m = 10;
+bin_w = total_diff/m;
+curr_thresh = 0;
+i = 0;
+while (curr_thresh < 2*null_zero_offset) {
+    null_thresh[i] = curr_thresh;
+    curr_thresh += bin_w;
+    i += 1;
+}
+var null_x_axis = d3.scale.linear().domain([0, 2*null_zero_offset]).range([0, width]);
+var num_sim_realizations = 1000;
+
+
 var os_histdata = d3.layout.histogram().bins(thresholds)(one_site_values);
 var nv_histdata = d3.layout.histogram().bins(thresholds)(no_var_values);
 var conf_histdata = d3.layout.histogram().bins(thresholds)(conflict_values);
@@ -201,15 +223,92 @@ var reflect_os_histdata = d3.layout.histogram().bins(thresholds)(reflect_os_valu
 var subtract_co_histdata = d3.layout.histogram().bins(thresholds)(subtract_co_values);
 var reflect_co_histdata = d3.layout.histogram().bins(thresholds)(reflect_co_values);
 
-var fill_per_site_hist = function(hist_data, y_axis) {
+var fill_per_site_hist = function(hist_data, x_axis, y_axis, zo) {
     var par_el = d3.select('#per-site-diff-dist');
-    append_hist_svg(par_el, hist_data, y_axis);
+    append_hist_svg(par_el, hist_data, x_axis, y_axis, zo);
 }
-var fill_per_site_null = function(null_data, y_axis) {
+var fill_per_site_null = function(null_data, x_axis, y_axis, zo) {
     var par_el = d3.select('#null-per-site-diff-dist');
-    append_hist_svg(par_el, null_data, y_axis);
+    append_hist_svg(par_el, null_data, x_axis, y_axis, zo);
 }
-var append_hist_svg = function(par_el, hist_data, y_axis) {
+var sum = function(arr) {
+    var i;
+    var s = 0.0;
+    for (i = 0; i < arr.length; ++i) {
+        s += arr[i];
+    }
+    return s;
+};
+var sample_realization = function(inp, nc) {
+    var num_choices = inp.length;
+    var sample = []
+    var i;
+    for (i=0; i < nc; ++i) {
+        var ind = Math.floor(Math.random()*num_choices);
+        sample[i] = inp[ind];
+    }
+    return sample;
+}
+var clear_sim_dist = function() {
+    d3.select('#null-realization-dist').selectAll("*").remove();
+    d3.select('#null-dist').selectAll("*").remove();
+    d3.select('#null-realization-sample-value').text(" ");
+    d3.select('#num-reps').text(0);
+    d3.select('#p-value').text("?");
+}
+var do_simulation_of_null = function(per_site_values,
+                                     ps_x_axis,
+                                     ps_y_axis,
+                                     ps_zo,
+                                     null_x_axis,
+                                     null_y_axis,
+                                     null_thresholds,
+                                     null_zero,
+                                     num_realizations,
+                                     settings_num) {
+    var ps_par_el = d3.select('#null-realization-dist');
+    var null_dist_par_el = d3.select('#null-dist');
+    var realization_text_el = d3.select('#null-realization-sample-value');
+    var num_reps_el = d3.select('#num-reps');
+    var p_value_el = d3.select('#p-value');
+    var realization;
+    var realized_sc;
+    var realization_histdata;
+    var null_array = [];
+    var num_in_tail = 0;
+    var rep = 0;
+    var millisecond_sleep = 5;
+    var do_another_realization = function(rep) {
+        if (settings_num != global_setting_switch) {
+            return null;
+        }
+        realization = sample_realization(per_site_values, num_char);
+        var sr = sum(realization)
+        realized_sc = sr - zero_offset*num_char;
+        realization_histdata = d3.layout.histogram().bins(thresholds)(realization);
+        realization_text_el.text(" " + realized_sc.toPrecision(2));
+        append_hist_svg(ps_par_el, realization_histdata, ps_x_axis, ps_y_axis, ps_zo);
+        null_array[rep] = realized_sc + null_zero;
+        if (Math.abs(realized_sc) >= Math.abs(total_diff)) {
+            num_in_tail = 1 + num_in_tail;
+        }
+        num_reps_el.text("" + (rep + 1));
+        p_value_el.text(" " + (num_in_tail/(rep +1)).toPrecision(3));
+        null_histdata = d3.layout.histogram().bins(null_thresholds)(null_array);
+        create_null_dist_svg(null_dist_par_el, null_histdata, null_x_axis, null_y_axis, null_zero);
+        rep += 1;
+        do_another(rep);
+    }
+    var do_another = function(rep) {
+        if (rep < num_realizations) {
+            setTimeout(function() {
+                do_another_realization(rep);
+            }, millisecond_sleep);
+        }
+    }
+    do_another(1);
+}
+var create_null_dist_svg = function(par_el, hist_data, x_axis, y_axis, zo) {
     par_el.selectAll("*").remove();
     hist_svg = par_el.append('svg')
         .attr("width", PER_SITE_WIDTH)
@@ -220,61 +319,134 @@ var append_hist_svg = function(par_el, hist_data, y_axis) {
         .data(hist_data)
       .enter().append("g")
         .attr("class", "bar")
-        .attr("transform", function(d) { return "translate(" + ps_x(d.x) + "," + y_axis(d.y) + ")"; });
+        .attr("transform", function(d) { return "translate(" + x_axis(d.x) + "," + y_axis(d.y) + ")"; });
     bar.append("rect")
         .attr("x", 1)
-        .attr("width", ps_x(hist_data[0].dx))
+        .attr("width", x_axis(hist_data[0].dx))
         .attr("height", function(d) { return height - y_axis(d.y); });
-    add_x_axis(hist_svg);
+    add_x_axis(hist_svg, x_axis, zo);
+    return bar;
 }
-var add_x_axis = function(hist_svg) {
+var append_hist_svg = function(par_el, hist_data, x_axis, y_axis, zo) {
+    par_el.selectAll("*").remove();
+    hist_svg = par_el.append('svg')
+        .attr("width", PER_SITE_WIDTH)
+        .attr("height", PER_SITE_HEIGHT)
+      .append("g")
+        .attr('transform', "translate(" + margin.left + "," + margin.top + ")");
+    var bar = hist_svg.selectAll(".bar")
+        .data(hist_data)
+      .enter().append("g")
+        .attr("class", "bar")
+        .attr("transform", function(d) { return "translate(" + x_axis(d.x) + "," + y_axis(d.y) + ")"; });
+    bar.append("rect")
+        .attr("x", 1)
+        .attr("width", x_axis(hist_data[0].dx))
+        .attr("height", function(d) { return height - y_axis(d.y); });
+    add_x_axis(hist_svg, x_axis, zo);
+}
+var add_x_axis = function(hist_svg, x_axis, zo) {
+    var xz = x_axis(zo);
+    var xl = x_axis(zo - total_diff);
+    var xu = x_axis(zo + total_diff);
     hist_svg.append("text")
-        .attr("x", width*(total_diff + tol)/(2*total_diff + tol))
+        .attr("x", xz)
         .attr("y", height)
-        .attr("dy", "1.0em")
+        .attr("dy", "2.0em")
         .attr("text-anchor", "middle")
         .text("0.0");
     hist_svg.append("text")
-        .attr("x", tol)
+        .attr("x", xl)
         .attr("y", height)
         .attr("dy", "1.0em")
         .attr("text-anchor", "middle")
         .text("-5.0");
     hist_svg.append("text")
-        .attr("x", width)
+        .attr("x", xu)
         .attr("y", height)
         .attr("dy", "1.0em")
         .attr("text-anchor", "middle")
         .text("5.0");
 }
-fill_per_site_hist(nv_histdata, ps_y);
-fill_per_site_null(subtract_nv_histdata, ps_y);
+fill_per_site_hist(nv_histdata, ps_x, ps_y, zero_offset);
+fill_per_site_null(subtract_nv_histdata, ps_x, ps_y, zero_offset);
+var global_setting_switch = 0;
 var dist_change = function () {
     var vchoice = $("#varselect option:selected").attr("value");
     var cchoice = $("#centerselect option:selected").attr("value");
+    global_setting_switch += 1;
+    clear_sim_dist();
     if (vchoice == "novar") {
-        fill_per_site_hist(nv_histdata, ps_y);
+        fill_per_site_hist(nv_histdata, ps_x, ps_y, zero_offset);
         if (cchoice == "subtract") {
-            fill_per_site_null(subtract_nv_histdata, ps_y);
+            fill_per_site_null(subtract_nv_histdata, ps_x, ps_y, zero_offset);
         } else {
-            fill_per_site_null(reflect_nv_histdata, ref_ps_y);
-       }
+            fill_per_site_null(reflect_nv_histdata, ps_x, ref_ps_y, zero_offset);
+        }
     } else if (vchoice == "conflict") {
-        fill_per_site_hist(conf_histdata, ps_y);
+        fill_per_site_hist(conf_histdata, ps_x, ps_y, zero_offset);
         if (cchoice == "subtract") {
-            fill_per_site_null(subtract_co_histdata, ps_y);
+            fill_per_site_null(subtract_co_histdata, ps_x, ps_y, zero_offset);
         } else {
-            fill_per_site_null(reflect_co_histdata, ref_ps_y);
-       }
+            fill_per_site_null(reflect_co_histdata, ps_x, ref_ps_y, zero_offset);
+        }
     } else {
-        fill_per_site_hist(os_histdata, ps_y);
+        fill_per_site_hist(os_histdata, ps_x, ps_y, zero_offset);
         if (cchoice == "subtract") {
-            fill_per_site_null(subtract_os_histdata, ps_y);
+            fill_per_site_null(subtract_os_histdata, ps_x, ps_y, zero_offset);
         } else {
-            fill_per_site_null(reflect_os_histdata, ref_ps_y);
-       }
+            fill_per_site_null(reflect_os_histdata, ps_x, ref_ps_y, zero_offset);
+        }
     }
 };
 $('#varselect').change(dist_change);
 $('#centerselect').change(dist_change);
+var generate_null = function () {
+    var vchoice = $("#varselect option:selected").attr("value");
+    var cchoice = $("#centerselect option:selected").attr("value");
+    var null_src_values = null;
+    var n_x = null_x_axis;
+    var ps_y_axis = ref_ps_y;
+    if (cchoice == "subtract") {
+        ps_y_axis = ps_y;
+    }
+    var n_y = d3.scale.linear().domain([0, num_sim_realizations/4]).range([height, 0]);
+    var null_thresholds = null_thresh;
+    var nz = null_zero_offset;
+    if (vchoice == "novar") {
+        n_x = ps_x;
+        null_thresholds = thresholds;
+        nz = zero_offset;
+        if (cchoice == "subtract") {
+            null_src_values = subtract_nv_values;
+            n_y = d3.scale.linear().domain([0, num_sim_realizations]).range([height, 0]);
+        } else {
+            null_src_values = reflect_nv_values;
+            n_y = d3.scale.linear().domain([0, num_sim_realizations/6]).range([height, 0]);
+        }
+    } else if (vchoice == "conflict") {
+        if (cchoice == "subtract") {
+            null_src_values = subtract_co_values;
+        } else {
+            null_src_values = reflect_co_values;
+        }
+    } else {
+        if (cchoice == "subtract") {
+            null_src_values = subtract_os_values;
+        } else {
+            null_src_values = reflect_os_values;
+        }
+    }
+    
+    do_simulation_of_null(null_src_values,
+                          ps_x,
+                          ps_y_axis,
+                          zero_offset,
+                          n_x,
+                          n_y,
+                          null_thresholds,
+                          nz,
+                          num_sim_realizations,
+                          global_setting_switch);
+}
 </script>
