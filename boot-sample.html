@@ -50,11 +50,11 @@ and http://bl.ocks.org/mbostock/4063550
     <td><div id="hist"/></td>
   </tr>
   <tr><td />
-          <td><span id="abBootText"></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-              <span id="acBootText"></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <td />
+          <td><span id="abBootText"></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+              <span id="acBootText"></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
               <span id="adBootText"></span>
       </td>
-      <td />
    </tr>
 </table>
 <script>
@@ -211,30 +211,25 @@ var do_boot_draw = function() {
         if (prev_points.length == 1) {
             prev_points[prev_points.length] = prev_points[0];
         }
-
         num_boot_reps += 1;
         if (norm_curr_points[0] > norm_curr_points[1]) {
             if (norm_curr_points[0] > norm_curr_points[2]) {
-                nAD += 1;
+                nAB += 1;
             } else if (norm_curr_points[2] > norm_curr_points[0]) {
-                nAC += 1;
+                nAD += 1;
             }
         } else if (norm_curr_points[1] > norm_curr_points[0]) {
             if (norm_curr_points[1] > norm_curr_points[2]) {
-                nAB += 1;
-            } else if (norm_curr_points[2] > norm_curr_points[1]) {
-                nAC += 1;
-            }
-        } else if (norm_curr_points[2] > norm_curr_points[0]) {
-            if (norm_curr_points[1] > norm_curr_points[2]) {
                 nAC += 1;
             } else if (norm_curr_points[2] > norm_curr_points[1]) {
                 nAD += 1;
             }
+        } else if (norm_curr_points[2] > norm_curr_points[0]) {
+            nAD += 1;
         }
         abBootText.text('C+G ' + (100*nAB/num_boot_reps).toFixed(1) + '%');
-        acBootText.text('H+G' + (100*nAC/num_boot_reps).toFixed(1) + '%');
-        adBootText.text('H+C' + (100*nAD/num_boot_reps).toFixed(1) + '%');
+        acBootText.text('H+G ' + (100*nAC/num_boot_reps).toFixed(1) + '%');
+        adBootText.text('H+C ' + (100*nAD/num_boot_reps).toFixed(1) + '%');
     }
 };
 /* ############################################################### */
@@ -305,7 +300,7 @@ hist_svg.append('path')
            'fill': TREEPREF3COLOR,
            'd': t3pathSpec});
 hist_svg.append('text')
-    .attr({'x': lower_left_tri.x - 33,
+    .attr({'x': lower_left_tri.x - 36,
            'y': lower_left_tri.y + 6,
            'stroke': TREE3COLOR,
            'fill': TREE3COLOR})
@@ -393,9 +388,9 @@ function update_bary() {
            'fill': '#FFF',
            'stroke': '#000',
            'id': 'origpoint'});
-    abBootText.text('C+G ???%');
-    acBootText.text('H+G ???%');
-    adBootText.text('H+C ???%');
+    abBootText.attr('fill', TREE1COLOR).attr('stroke', TREE1COLOR).text('C+G ???%');
+    acBootText.text('H+G ???%').attr('fill', TREE2COLOR).attr('stroke', TREE2COLOR);
+    adBootText.text('H+C ???%').attr('fill', TREE3COLOR).attr('stroke', TREE3COLOR);
 }
 
 var count_vec_radius = function(data, i) {
