@@ -145,8 +145,12 @@ do_init(src_data);
 var LABEL_Y = 5
 var LABEL_X = 20;
 var labels = ["Human", "Chimp", "Gorilla", "Orang"];
-for (i = 0 ; i < 4; ++i) {
-    src_svg.append("text").attr("x", LABEL_X).attr("y", LABEL_Y + i*TEXT_Y + TEXT_Y_OFF).text(labels[i]);
+var ul;
+for (ul = 0; ul < 2; ++ul) {
+    for (i = 0 ; i < 4; ++i) {
+        src_svg.append("text").attr("x", LABEL_X).attr("y", LABEL_Y + i*TEXT_Y + TEXT_Y_OFF).text(labels[i]);
+    }
+    LABEL_Y += LOWER_Y;
 }
 var num_sampled = 0;
 var bootstrap = function() {
