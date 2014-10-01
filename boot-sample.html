@@ -61,7 +61,7 @@ var COL_WIDTH = OFFSET;
 var TEXT_X = COL_WIDTH/2;
 var TEXT_Y = MAT_HEIGHT/4;
 var TEXT_Y_OFF = TEXT_Y/2;
-var NUM_OVERLAID = 2; /* 1 + NUM_CHAR; */
+var NUM_OVERLAID = 1; /* 1 + NUM_CHAR; */
 var LOWER_Y = MAT_HEIGHT + SPACE;
 var margin = {top: 10, right: 10, bottom: 35, left: 15}
 var src_svg = d3.select('#src').append('svg')
@@ -111,6 +111,7 @@ var do_init = function (src_data) {
             .attr("text-anchor", "middle")
             .text(function(d) {return d.site[k];})
     }
+    bar.exit().remove();
     var r = bar.selectAll("rect");
     r.attr("x", function(d) {return d.x})
      .attr("y", function(d) {return d.y});
@@ -124,12 +125,9 @@ var do_update = function (src_data) {
     var cp = pseudo_rep_x;
     var nb = bar
         .enter().append("g")
-            .attr("transform", function(d, i) {return "translate(0, 0)";});
-            /*.attr("transform", function(d, i) {return "translate(" + cp +", " + LOWER_Y + ")";});*/
+            .attr("transform", function(d, i) {return "translate(" + d.x +", " + d.y+ ")";});
     pseudo_rep_x += COL_WIDTH * nb.length;
     nb.append("rect")
-         .attr("x", function(d) {return d.x})
-         .attr("y", function(d) {return d.y})
          .attr("width", OFFSET)
          .attr("height", MAT_HEIGHT)
          .attr("fill", function(d) {return color(d.value)});
@@ -137,8 +135,8 @@ var do_update = function (src_data) {
     for (j = 0 ; j < 4; ++j) {
         var k = j;
         nb.append("text")
-            .attr("x", function(d) {return d.x + TEXT_X;})
-            .attr("y", function(d) {return d.y + k*TEXT_Y + TEXT_Y_OFF;})
+            .attr("x", function(d) {return TEXT_X;})
+            .attr("y", function(d) {return k*TEXT_Y + TEXT_Y_OFF;})
             .attr("dy", ".35em")
             .attr("text-anchor", "middle")
             .text(function(d) {return d.site[k];})
@@ -147,7 +145,22 @@ var do_update = function (src_data) {
         .attr("transform", function(d, i) {return "translate(" + cp +", " + LOWER_Y + ")";});
 }
 var columns = do_init(src_data);
-
-src_data[src_data.length] = src_data[0];
-do_update(src_data);
+var num_sampled = 0;
+var bootstrap = function() {
+    src_data = src_data.slice(0, NUM_CHAR);
+    do_init(src_data);
+    num_sampled = 0;
+    pseudo_rep_x = 0
+    do_boot_draw();
+};
+var millisecond_sleep = 500;
+var do_boot_draw = function() {
+    var sel_ind = Math.floor(Math.random()*NUM_CHAR);
+    src_data[src_data.length] = src_data[sel_ind];
+    num_sampled += 1;
+    do_update(src_data);
+    if (num_sampled < NUM_CHAR) {
+        setTimeout(function() {do_boot_draw();}, millisecond_sleep);
+    }
+};
 </script>
