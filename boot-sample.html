@@ -49,7 +49,6 @@ and http://bl.ocks.org/mbostock/4063550
     <td><div id="src"/></td>
   </tr>
 </table>
-<br/><br/><br/><br/><br/><br/><p>Thanks to <a href="http://bl.ocks.org/d3noob/10633704">http://bl.ocks.org/d3noob/10633704</a></p>
 <script>
 var MAT_WIDTH = 200;
 var MAT_HEIGHT = 120;
@@ -63,7 +62,7 @@ var TEXT_Y = MAT_HEIGHT/4;
 var TEXT_Y_OFF = TEXT_Y/2;
 var NUM_OVERLAID = 1; /* 1 + NUM_CHAR; */
 var LOWER_Y = MAT_HEIGHT + SPACE;
-var margin = {top: 10, right: 10, bottom: 35, left: 15}
+var margin = {top: 10, right: 10, bottom: 35, left: 75}
 var src_svg = d3.select('#src').append('svg')
     .attr({'width': MAT_WIDTH + margin.left + margin.right,
            'height': FIG_HEIGHT + margin.bottom + margin.top, })
@@ -78,7 +77,7 @@ for (nc = 0 ; nc < NUM_CHAR; ++nc) {
     var cp = pat[nc];
     var ct = typ[nc]
     for (i = 0; i < NUM_OVERLAID; ++i) {
-        src_data[ind] = {'x': COL_WIDTH*nc,
+        src_data[ind] = {'x': margin.left + COL_WIDTH*nc,
                          'y': 0,
                          'value': ct,
                          'site': cp,
@@ -112,9 +111,6 @@ var do_init = function (src_data) {
             .text(function(d) {return d.site[k];})
     }
     bar.exit().remove();
-    var r = bar.selectAll("rect");
-    r.attr("x", function(d) {return d.x})
-     .attr("y", function(d) {return d.y});
     return bar;
 }
 var pseudo_rep_x = 0;
@@ -122,7 +118,7 @@ var pseudo_rep_x = 0;
 var do_update = function (src_data) {
     var bar = src_svg.selectAll("g")
         .data(src_data);
-    var cp = pseudo_rep_x;
+    var cp = margin.left + pseudo_rep_x;
     var nb = bar
         .enter().append("g")
             .attr("transform", function(d, i) {return "translate(" + d.x +", " + d.y+ ")";});
@@ -142,9 +138,16 @@ var do_update = function (src_data) {
             .text(function(d) {return d.site[k];})
     }
     nb.transition()
+        .duration(750)
         .attr("transform", function(d, i) {return "translate(" + cp +", " + LOWER_Y + ")";});
 }
-var columns = do_init(src_data);
+do_init(src_data);
+var LABEL_Y = 5
+var LABEL_X = 20;
+var labels = ["Human", "Chimp", "Gorilla", "Orang"];
+for (i = 0 ; i < 4; ++i) {
+    src_svg.append("text").attr("x", LABEL_X).attr("y", LABEL_Y + i*TEXT_Y + TEXT_Y_OFF).text(labels[i]);
+}
 var num_sampled = 0;
 var bootstrap = function() {
     src_data = src_data.slice(0, NUM_CHAR);
