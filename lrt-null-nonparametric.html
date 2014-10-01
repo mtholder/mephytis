@@ -110,7 +110,7 @@ var height = PER_SITE_HEIGHT - margin.top - margin.bottom;
 
 var total_diff = 5.0;
 var num_char = 100;
-var round_tol = 0.00001;
+var round_tol = 0.0001;
 
 var orig_mean_ps = total_diff / num_char;
 var half_num_char = num_char/2;
@@ -205,11 +205,11 @@ for (i = 0; i < num_char - 1; ++i) {
     subtract_os_values[i] = zero_offset - orig_mean_ps;
 }
 subtract_os_values[num_char - 1] = zero_offset + total_diff - orig_mean_ps;
-for (i = 0; i < 2*num_char - 2; ++i) {
+for (i = 0; i < 2*num_char; ++i) {
     reflect_os_values[i] = zero_offset;
 }
-reflect_os_values[2*num_char - 2] = zero_offset + total_diff;
-reflect_os_values[2*num_char - 1] = zero_offset - total_diff;
+reflect_os_values[0] = zero_offset + total_diff;
+reflect_os_values[1] = zero_offset - total_diff;
 
 /* data for two ways of getting a null per-site for the conflict data */
 var subtract_co_values = [];

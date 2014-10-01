@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<!-- from http://bl.ocks.org/mbostock/4339083
+and http://bl.ocks.org/mbostock/4063550
+
+!-->
+<meta charset="utf-8">
+<style>
+
+.node circle {
+  fill: #fff;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+
+.node {
+  font: 10px sans-serif;
+}
+
+.link {
+  fill: none;
+  stroke: #ccc;
+  stroke-width: 1.5px;
+}
+#tree1par {
+  vertical-align: top;
+  float: left;
+}
+#tree2par {
+  vertical-align: center;
+  float: left;
+}
+#tree3par {
+  vertical-align: bottom;
+  float: left;
+}
+#histpar {
+  vertical-align: top;
+  float: right;
+}
+</style>
+<body>
+<script src="d3/d3.v3.min.js"></script>
+<script src="jquery/jquery.v2.min.js"></script>
+<table>
+  <tr>
+    <td>
+      <input name="boot" type="button" value="Bootstrap" onclick="bootstrap()" />
+    </td>
+    <td><div id="src"/></td>
+  </tr>
+</table>
+<br/><br/><br/><br/><br/><br/><p>Thanks to <a href="http://bl.ocks.org/d3noob/10633704">http://bl.ocks.org/d3noob/10633704</a></p>
+<script>
+var MAT_WIDTH = 200;
+var MAT_HEIGHT = 120;
+var SPACE = 60;
+var FIG_HEIGHT = 2*MAT_HEIGHT + SPACE;
+var NUM_CHAR = 10;
+var OFFSET = MAT_WIDTH / NUM_CHAR;
+var COL_WIDTH = OFFSET;
+var TEXT_X = COL_WIDTH/2;
+var TEXT_Y = MAT_HEIGHT/4;
+var TEXT_Y_OFF = TEXT_Y/2;
+var NUM_OVERLAID = 2; /* 1 + NUM_CHAR; */
+var src_svg = d3.select('#src').append('svg')
+    .attr({'width': MAT_WIDTH,
+           'height': FIG_HEIGHT, })
+    .style('background', 'white');
+var src_data = [];
+var i = 0;
+var ind = 0;
+var pat = ['AAAA', 'CCTT', 'CCCC', 'AAAA', 'GGAA', 'CGCG', 'TTTT', 'GAAG', 'CTTC', 'TTGG'];
+var typ = [    0,      1,      0,      0,      1,      3,     0,       2,      2,      1];
+var nc = 0
+for (nc = 0 ; nc < NUM_CHAR; ++nc) {
+    var cp = pat[nc];
+    var ct = typ[nc]
+    for (i = 0; i < NUM_OVERLAID; ++i) {
+        src_data[ind] = {'x': COL_WIDTH*nc, 'y':MAT_HEIGHT, 'value': ct, 'site': cp};
+        ind += 1;
+    }
+}
+var bar = src_svg.selectAll("g")
+    .data(src_data)
+  .enter().append("g")
+  .attr("transform", function(d) {
+          return "translate(" + d.x + ", " + d.y + ")";
+        });
+var color = d3.scale.threshold()
+    .domain([.5, 1.5, 2.5, 3.5])
+    .range(['#BBBBBB', '#FF0000', '#00FF00', '#6666FF'])
+bar.append("rect")
+    .attr("width", OFFSET)
+    .attr("height", MAT_HEIGHT)
+    .attr("fill", function(d) {return color(d.value)});
+var j;
+for (j = 0 ; j < 4; ++j) {
+    var k = j;
+    bar.append("text")
+        .attr("x", function(d) {return TEXT_X;})
+        .attr("y", function(d) {return k*TEXT_Y + TEXT_Y_OFF;})
+        .attr("dy", ".35em")
+        .attr("text-anchor", "middle")
+        .text(function(d) {return d.site[k];})
+}
+
+</script>
