@@ -46,15 +46,16 @@ and http://bl.ocks.org/mbostock/4063550
 <table>
   <tr>
     <td>
-      <input name="boot" type="button" value="Bootstrap" onclick="bootstrap()" />
+      <input id="bootbtn" name="boot" type="button" value="Add 1 bootstrap rep" onclick="bootstrap()" />
     </td>
     <td><div id="src"/></td>
   </tr>
   <tr>
       <td></td>
-      <td><span id="result">Click "Bootstrap" to draw a pseudoreplicate</span></td>
+      <td><span id="result">Click "Add 1 bootstrap rep" to draw a pseudoreplicate</span></td>
   </tr>
-  <tr><td />
+  <tr>
+      <td><span id="nreps">0 replicates done</span></td>
           <td class="textsumm">
               <span id="abBootText"></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
               <span id="acBootText"></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -67,6 +68,43 @@ and http://bl.ocks.org/mbostock/4063550
       <td><div id="hist"/></td>
   </tr>
 </table>
+<h2>Background</h2>
+<p> This page demonstrates the non-parametric bootstrap for phylogenetics (<a href="http://dx.doi.org/10.2307/2408678">Felsenstein, 1985</a>).
+The top character table represents a (fictitious) alignment of DNA sequences from 4 primates.
+Assuming that the orangutan is the outgroup and disregarding the possibility that the ancestral
+gene sequence simultaneously gave rise to 3 daughter lineages leaves us with 3 possible trees for these data.
+Humans could be sister to chimps. Humans could be sister to gorillas. Or chimps and gorillas 
+could be most closely related to each other.</p>
+<p>Columns shown in grey are sites which have no preference for any of the tree according to the parsimony criterion. In other words, all three trees explain these sites equally well.
+Sites that favor the human+chimp tree are shown in red;
+sites favoring the human+gorilla tree are in blue; and
+sites favoring the chimp+gorilla tree are in green.
+</p>
+<p>In this (contrived) data set there are 3 sites favoring the H+C tree, 2 favoring the C+G tree, 1 favoring the H+G tree, and 4 sites that do not prefer any of the trees.
+Thus the point estimate of the best relationships (under the parsimony criterion) would be the H+C tree.
+</p>
+<p>Bootstrapping tries to help us determine if we should be confident that this estimate is not an artifact of sampling error.</p>
+<p>The recipe for bootstrapping is to draw new data sets from your original data by sampling with replacement.
+For each pseudoreplicate dataset, you can estimate the best tree.
+If there groupings in the tree are disturbed by this resampling, you will fail to see those groups recovered in a large fraction of the bootstrap replicates.
+The bootstrap proportions for these groups will not be close to 100%, and you can conclude that 
+the amount of signal present in the original data for these groups could plausibly be explained by sampling error.</p>
+<h2>Using the demo</h2>
+<p>The triangle on the bottom shows a representation of the frequency of the parsimony-informative sites in pattern frequency space. This coordinate system is explained <a href="./parsimony-inf.html">here</a>.
+The observed data set is depicted as a white circle.
+</p>
+<p>Each time you click the bootstrap button, you will see a pseudoreplicate dataset being drawn from the original dataset.
+As the bootstrap replicate is being drawn, you will see its parsimony-informative pattern spectrum update with
+each parsimony-informative pattern that is added. This shows up as the yellow circle moving during the bootstrap draws.
+This moving circle is just to give you a sense of how the coordinate system works - the only result that matters is which tree is favored when you have drawn a number of characters equal to the size of the original data (10 in this example).
+</p>
+<p>When a full bootstrap resampled data set is created, we can decide which tree is favored by the pseudoreplicate. If there are ties we give each of the two trees 1/2 credit (or give each of the 3 trees 1/3 credit in the event of a three-way tie for which tree is the best explanation of the pseudoreplicate).
+The bootstrap proportions for each of the 3 trees are updated each time you finish a bootstrap replicate.
+The previously sampled datasets remain as small black dot in the pattern-frequency space figure.</p>
+<p>In a real analysis, you would want to perform hundreds of bootstrap pseudoreplicates before you put much faith in the bootstarp proportions.
+Note that on larger examples, a tree search must be performed.
+With parsimony and only 3 possibilities, we can simply figure out which tree is preferred by whether the most frequent informative patterns are red, green, or blue.</p>
+
 <script>
 var MAT_WIDTH = 200;
 var MAT_HEIGHT = 120;
@@ -88,7 +126,7 @@ var src_svg = d3.select('#src').append('svg')
 var src_data = [];
 var i = 0;
 var ind = 0;
-var pat = ['GGGG', 'CCTT', 'CCCC', 'AAAA', 'GGAA', 'CGCG', 'TTTT', 'GAAG', 'CTTC', 'TTGG'];
+var pat = ['GGGC', 'CCTT', 'CCCC', 'AGAA', 'GGAA', 'CGCG', 'TTTT', 'GAAG', 'CTTC', 'TTGG'];
 var typ = [    0,      1,      0,      0,      1,      3,     0,       2,      2,      1];
 var ab = 0;
 var ac = 0;
@@ -186,7 +224,9 @@ var num_sampled = 0;
 var curr_points = [0, 0, 0];
 var norm_curr_points = [];
 var resultTextSpan = d3.select("#result");
+var nrepsTextSpan = d3.select("#nreps");
 var bootstrap = function() {
+    $("#bootbtn").prop("disabled", true);
     curr_points = [0, 0, 0];
     norm_curr_points = [];
     src_data = src_data.slice(0, NUM_CHAR);
@@ -224,6 +264,11 @@ var do_boot_draw = function() {
             prev_points[prev_points.length] = prev_points[0];
         }
         num_boot_reps += 1;
+        if (num_boot_reps == 1) {
+            nrepsTextSpan.text("" + num_boot_reps + " replicate:");
+        } else {
+            nrepsTextSpan.text("" + num_boot_reps + " replicates:");
+        }
         if (norm_curr_points[0] > norm_curr_points[1]) {
             if (norm_curr_points[0] > norm_curr_points[2]) {
                 resultTextSpan.text('Chimp + Gorilla tree preferred on this rep.');
@@ -266,6 +311,7 @@ var do_boot_draw = function() {
         abBootText.text('C+G ' + (100*nCG/num_boot_reps).toFixed(1) + '%');
         acBootText.text('H+G ' + (100*nHG/num_boot_reps).toFixed(1) + '%');
         adBootText.text('H+C ' + (100*nHC/num_boot_reps).toFixed(1) + '%');
+        $("#bootbtn").prop("disabled", false);
     }
 };
 /* ############################################################### */
