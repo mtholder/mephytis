@@ -436,8 +436,6 @@ var tree2group = {
   't1':t1n,
 }
 var prob_vec = [0.25, 0.2, 0.15, 0.1, 0.1, 0.1, 0.05, 0.05,
-                0.25, 0.2, 0.15, 0.1, 0.1, 0.1, 0.05, 0.05,
-                0.25, 0.2, 0.15, 0.1, 0.1, 0.1, 0.05, 0.05,
                 0.25, 0.2, 0.15, 0.1, 0.1, 0.1, 0.05, 0.05];
 
 
@@ -465,12 +463,11 @@ var barY = function(data, i) {
   return group_offset + prob_offset;
 };
 var barWidth = function(datum, i) {
-  if (i < 8) {
-    return 0;
-  }
-  var tree = fullProbIndexToTree(i);
-  if (!show_trees[tree]){
-    return 0;
+  if (i >= 8) {
+    var tree = fullProbIndexToTree(i);
+    if (!show_trees[tree]) {
+      return 0;
+    }
   }
   return datum*(HIST_WIDTH - HIST_BAR_X);
 };
@@ -570,11 +567,15 @@ var refresh_hist_bars = function() {
   hist_bars.data(prob_vec).attr('width', barWidth);
 }
 
+var patfreq = [8/36.0, 7/36.0, 6/36.0, 5/36.0, 4/36.0, 3/36.0, 2/36.0, 1/36.0];
 var refresh_probabilities = function(tree) {
   var prob_offset_arr = tree2prob_offset[tree];
   var node_data = g_nodes_obj[tree];
   var p = calc_probs_on_12v45_tree(node_data);
   var i = 0;
+  for (i = 0; i < 8; ++i) {
+    prob_vec[i] = patfreq[i];
+  }
   for (i = 0; i < 8; ++i) {
     var pvi = prob_offset_arr[i];
     prob_vec[pvi] = p[i];
