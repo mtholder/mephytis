@@ -58,6 +58,7 @@ and http://bl.ocks.org/mbostock/4063550
 <body>
 <script src="d3/d3.v3.min.js"></script>
 <script src="jquery/jquery.v2.min.js"></script>
+<p id="lnLElement">LnL</p>
 <div>
   <div id="histpar" />
 </div>
@@ -94,7 +95,7 @@ var TOL = 0.01;
 var NODE_COLOR = '#88f';
 var NODE_HIGHLIGHT_COLOR = "#EA0";
 var ARROW_KEY_PIXEL_JUMP = 1;
-var STARTING_EDGE_LENGTH = 0.1;
+var STARTING_EDGE_LENGTH = 0.2;
 var g_nodes_obj = {
   't1':  [
     {"index": 0,
@@ -598,8 +599,18 @@ var calc_probs_on_12v45_tree = function(node_array) {
 var refresh_hist_bars = function() {
   hist_bars.data(prob_vec).attr('width', barWidth);
 }
-var numChars = 36;
-var patfreq = [8/36.0, 7/36.0, 6/36.0, 5/36.0, 4/36.0, 3/36.0, 2/36.0, 1/36.0];
+//var patCounts = [18, 2, 13, 2, 2, 8, 3, 19];
+var patCounts = [0.39582700404415855, 0.053710635538826434, 0.19453390804347603, 0.06279136738369137, 0.05933727909744569, 0.06659368770174214, 0.03635368770174211, 0.13085243048891773];
+var numChars = 0;
+for (i = 0; i < 8; ++i) {
+  numChars += patCounts[i];
+}
+var patfreq = [];
+for (i = 0; i < 8; ++i) {
+  patfreq[i] = patCounts[i]/numChars;
+}
+
+numChars *= 10 ;
 var refresh_probabilities = function(tree) {
   var prob_offset_arr = tree2prob_offset[tree];
   var node_data = g_nodes_obj[tree];
@@ -629,7 +640,8 @@ var calcLnL = function(modelProb, dataProp, numPatterns, dataSize) {
 };
 
 var unconstrainedLnL = calcLnL(patfreq, patfreq, 8, numChars);
-var smallBrLen = 0.05
+var smallBrLen = STARTING_EDGE_LENGTH;
+var bigBrLen = STARTING_EDGE_LENGTH;
 var proxySmallTree = [
     {},
     { "edge": {
@@ -655,7 +667,6 @@ var proxySmallTree = [
 ];
 var smallTreeProbs = calc_probs_on_12v45_tree(proxySmallTree);
 var smallTreeLnL = calcLnL(smallTreeProbs, patfreq, 8, numChars);
-var bigBrLen = 0.4;
 var i = 0;
 for (i = 1; i < 6; ++i) {
   proxySmallTree[i].edge.length = bigBrLen;
@@ -717,8 +728,18 @@ for (i = 0 ; i < 5; ++i) {
 var refresh_likelihood_traces = function(tree) {
   var i;
   var p = refresh_probabilities(tree);
+  /*d3.select("#console").text("[" + p[0] + ", " + 
+                             p[1] + ", " + 
+                             p[2] + ", " + 
+                             p[3] + ", " + 
+                             p[4] + ", " + 
+                             p[5] + ", " + 
+                             p[6] + ", " + 
+                             p[7] + "];"
+                             );
+  */
   var lnL = calcLnL(p, patfreq, 8, numChars);
-  d3.select("#console").text(traceMax + " " + traceMin + " " + smallTreeLnL + " " + bigTreeLnL + " " + badLnL + "\n" + lnL);
+  d3.select("#lnLElement").text("lnL = " + lnL);
   var xl = traceData.length;
   var node_data = g_nodes_obj[tree];
   var currDatum = {
@@ -818,6 +839,11 @@ $(document).ready(function() {
           }
       }
     });
-}); 
+});
+
+var ini_highlighted_node = d3.select('#t1n1');
+do_highlight_node(ini_highlighted_node);
+var ini_datum = ini_highlighted_node.data()[0];
+drag_selection(ini_highlighted_node, ini_datum.x, ini_datum.y);
 
 </script>
