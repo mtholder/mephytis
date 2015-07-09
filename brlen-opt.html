@@ -85,7 +85,7 @@ var TREE_HEIGHT = 220;
 var HIST_WIDTH = 300;
 var HIST_HEIGHT = 300;
 var TRACE_HEIGHT  = TREE_HEIGHT*.75;
-var TRACE_WIDTH =200;
+var TRACE_WIDTH = 150;
 
 var scaler = 200;
 var max_len = 0.5;
@@ -600,7 +600,7 @@ var refresh_hist_bars = function() {
   hist_bars.data(prob_vec).attr('width', barWidth);
 }
 //var patCounts = [18, 2, 13, 2, 2, 8, 3, 19];
-var patCounts = [0.39582700404415855, 0.053710635538826434, 0.19453390804347603, 0.06279136738369137, 0.05933727909744569, 0.06659368770174214, 0.03635368770174211, 0.13085243048891773];
+var patCounts = [0.39, 0.054, 0.19, 0.0628, 0.059, 0.0666, 0.03635, 0.1309];
 var numChars = 0;
 for (i = 0; i < 8; ++i) {
   numChars += patCounts[i];
@@ -675,7 +675,7 @@ var bigTreeProbs = calc_probs_on_12v45_tree(proxySmallTree);
 var bigTreeLnL = calcLnL(bigTreeProbs, patfreq, 8, numChars);
 var badLnL = (bigTreeLnL > smallTreeLnL ? smallTreeLnL : bigTreeLnL);
 var unconstrainedLnL = calcLnL(patfreq, patfreq, 8, numChars);
-var traceMax = Math.ceil(unconstrainedLnL);
+var traceMax = unconstrainedLnL //Math.ceil(unconstrainedLnL);
 var traceMin = Math.floor(badLnL);
 
 
