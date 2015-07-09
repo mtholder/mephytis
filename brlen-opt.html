@@ -37,19 +37,37 @@ and http://bl.ocks.org/mbostock/4063550
   vertical-align: top;
   float: right;
 }
+.line {
+  fill: none;
+  stroke: black;
+  stroke-width: 1.0px;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.x.axis path {
+  display: none;
+}
+
 </style>
 <body>
 <script src="d3/d3.v3.min.js"></script>
 <script src="jquery/jquery.v2.min.js"></script>
 <div>
-  <div id="tree1par" />
   <div id="histpar" />
 </div>
 <table>
   <tr><td><div id="tree1svg"/></td><td><div id="hist"/></td></tr>
-  <tr><td></td><td></td></tr>
 </table>
-
+<table>
+  <tr><td><div id="tree1edge1svg"/></td><td></td></tr>
+</table>
+<p id="console"></p>
 <!-- footer -->
 <h4></h4>
 <p>Back to the demo <a href="./index.html">table of contents...</a></p>
@@ -65,6 +83,9 @@ var TREE_WIDTH = 290;
 var TREE_HEIGHT = 220;
 var HIST_WIDTH = 300;
 var HIST_HEIGHT = 300;
+var TRACE_HEIGHT  = TREE_HEIGHT*.75;
+var TRACE_WIDTH =200;
+
 var scaler = 200;
 var max_len = 0.5;
 var UP_ANGLE = Math.PI/2; // 90 degree up
@@ -147,6 +168,12 @@ var tree1svg_root = d3.select('#tree1svg').append('svg')
     .attr({'width':  TREE_WIDTH,
            'height': TREE_HEIGHT,})
     .style('background', 'white');
+
+var tree1edge1svg_root = d3.select('#tree1edge1svg').append('svg')
+    .attr({'width':  TRACE_WIDTH,
+           'height': TRACE_HEIGHT,})
+    .style('background', 'white');
+
 
 var nodeX = function(node) {
   var e = node.edge;
@@ -329,7 +356,7 @@ var do_dragmove = function(node_data, dx, dy) {
   node_data.y = ny;
   refresh_nodes(node_data.svg_container);
   refresh_edges(node_data.svg_container);
-  refresh_probabilities(node_data.tree);
+  refresh_likelihood_traces(node_data.tree);
 }
 
 
@@ -477,13 +504,13 @@ var barFill = function(datum, i) {
   }
   if (i < 16) {
     return TREE1COLOR;
-  }
+  }9
 };
 var barText = function(datum, i) {
   if (i == 0) {
     return 'ABCD';
   }
-  if (i < 24) {
+  if (i < 8) {
     return '';
   }
   var s = Math.floor(i%8).toString(2);
@@ -493,7 +520,7 @@ var textBarY = function(data, i) {
   if (i == 0) {
     return HIST_HEIGHT;
   }
-  return barY(data, i);
+  return barY(data, i + 16);
 };
 
 var g_hn = hist_svg.selectAll('g')
@@ -566,7 +593,7 @@ var calc_probs_on_12v45_tree = function(node_array) {
 var refresh_hist_bars = function() {
   hist_bars.data(prob_vec).attr('width', barWidth);
 }
-
+var numChars = 36;
 var patfreq = [8/36.0, 7/36.0, 6/36.0, 5/36.0, 4/36.0, 3/36.0, 2/36.0, 1/36.0];
 var refresh_probabilities = function(tree) {
   var prob_offset_arr = tree2prob_offset[tree];
@@ -581,7 +608,126 @@ var refresh_probabilities = function(tree) {
     prob_vec[pvi] = p[i];
   }
   refresh_hist_bars();
+  return p;
+};
+
+var calcLnL = function(modelProb, dataProp, numPatterns, dataSize) {
+  var i = 0;
+  var lnl = 0.0;
+  for (i = 0; i < numPatterns; ++i) {
+    var df = dataProp[i];
+    if (df > 0.0) {
+        lnl += dataSize*df*Math.log(modelProb[i]);
+    }
+  }
+  return lnl;
+};
+
+var unconstrainedLnL = calcLnL(patfreq, patfreq, 8, numChars);
+var smallBrLen = 0.05
+var proxySmallTree = [
+    {},
+    { "edge": {
+        "length": smallBrLen,
+      }
+    },
+    { "edge": {
+        "length": smallBrLen,
+      }
+    },
+    { "edge": {
+        "length": smallBrLen,
+      }
+    },
+    { "edge": {
+        "length": smallBrLen,
+      }
+    },
+    { "edge": {
+        "length": smallBrLen,
+      }
+    }
+];
+var smallTreeProbs = calc_probs_on_12v45_tree(proxySmallTree);
+var smallTreeLnL = calcLnL(smallTreeProbs, patfreq, 8, numChars);
+var bigBrLen = 0.4;
+var i = 0;
+for (i = 1; i < 6; ++i) {
+  proxySmallTree[i].edge.length = bigBrLen;
 }
+var bigTreeProbs = calc_probs_on_12v45_tree(proxySmallTree);
+var bigTreeLnL = calcLnL(bigTreeProbs, patfreq, 8, numChars);
+var badLnL = (bigTreeLnL > smallTreeLnL ? smallTreeLnL : bigTreeLnL);
+var unconstrainedLnL = calcLnL(patfreq, patfreq, 8, numChars);
+var traceMax = Math.ceil(unconstrainedLnL);
+var traceMin = Math.floor(badLnL);
+
+
+var traceMargin = {top: 5, right: 5, bottom: 3, left: 3};
+var traceWriteWidth = TRACE_WIDTH - traceMargin.left - traceMargin.right;
+var traceWriteHeight = TRACE_HEIGHT - traceMargin.top - traceMargin.bottom;
+var traceX = d3.scale.linear()
+    .range([0, traceWriteWidth])
+    .domain([0, 0.5]);
+var traceY = d3.scale.linear()
+    .range([traceWriteHeight, 0])
+    .domain([traceMin, traceMax]);
+var traceXAxis = d3.svg.axis()
+    .scale(traceX)
+    .orient("bottom");
+var traceYAxis = d3.svg.axis()
+    .scale(traceY)
+    .orient("left");
+var traceLine = d3.svg.line()
+    .x(function(d) { return traceX(d.edge_len); })
+    .y(function(d) { return traceY(d.lnL); });
+
+tree1edge1svg_root.attr("width", TRACE_WIDTH)
+    .attr("height", TRACE_HEIGHT)
+  .append("g")
+    .attr("transform", "translate(" + traceMargin.left + "," + traceMargin.top + ")");
+
+
+tree1edge1svg_root.append("g")
+  .attr("class", "x axis")
+  .attr("transform", "translate(0," + traceWriteHeight + ")")
+  .call(traceXAxis);
+
+/*
+tree1edge1svg_root.append("g")
+    .attr("class", "y axis")
+    .call(traceYAxis);
+*/
+
+var traceData = [
+  {"edge_len": smallBrLen,
+   "lnL": badLnL
+  }, {
+    "edge_len": 0,
+   "lnL": unconstrainedLnL
+  }, {
+    "edge_len": .25,
+   "lnL": unconstrainedLnL
+  }, {
+    "edge_len": bigBrLen,
+   "lnL": badLnL
+  }, {
+    "edge_len": 0.5,
+   "lnL": badLnL
+  }
+];
+
+tree1edge1svg_root.append("path")
+    .datum(traceData)
+    .attr("class", "line")
+    .attr("d", traceLine);
+
+var refresh_likelihood_traces = function(tree) {
+  var p = refresh_probabilities(tree);
+  var lnL = calcLnL(p, patfreq, 8, numChars);
+  d3.select("#console").text(traceMax + " " + traceMin + " " + smallTreeLnL + " " + bigTreeLnL + " " + badLnL + "\n" + lnL);
+};
+
 refresh_probabilities('t1');
 var toggleTree = function (tree) {
   show_trees[tree] = ! show_trees[tree];
@@ -600,9 +746,9 @@ $(document).ready(function() {
         var dx, dy, move=false;
         var datum = g_curr_highlighted_selection.data();
         var d = datum[0];
-        if (e.keyCode == 9) {
+        if (e.keyCode == 9) { //tab
           if (d.index == 5) {
-            next_node = d3.select('#' + d.tree + 'n0');
+            next_node = d3.select('#' + d.tree + 'n1');
           } else {
             next_node = d3.select('#' + d.tree + 'n' + (1 + d.index));
           }
