@@ -65,7 +65,7 @@ and http://bl.ocks.org/mbostock/4063550
   <tr><td><div id="tree1svg"/></td><td><div id="hist"/></td></tr>
 </table>
 <table>
-  <tr><td><div id="tree1edge1svg"/></td><td></td></tr>
+  <tr><td><div id="tree1edge1svg"/></td><td><div id="tree1edge2svg"/></td><td><div id="tree1edge3svg"/></td><td><div id="tree1edge4svg"/></td><td><div id="tree1edge5svg"/></td></tr>
 </table>
 <p id="console"></p>
 <!-- footer -->
@@ -169,11 +169,16 @@ var tree1svg_root = d3.select('#tree1svg').append('svg')
            'height': TREE_HEIGHT,})
     .style('background', 'white');
 
-var tree1edge1svg_root = d3.select('#tree1edge1svg').append('svg')
-    .attr({'width':  TRACE_WIDTH,
+var tree1trace_roots = [];
+for (i = 0; i < 5; ++i) {
+  var sel = '#tree1edge' + (1 + i) + 'svg';
+  var r = d3.select(sel);
+  r = r.append('svg');
+  r.attr({'width':  TRACE_WIDTH,
            'height': TRACE_HEIGHT,})
     .style('background', 'white');
-
+  tree1trace_roots[i] = r;
+}
 
 var nodeX = function(node) {
   var e = node.edge;
@@ -678,54 +683,59 @@ var traceXAxis = d3.svg.axis()
 var traceYAxis = d3.svg.axis()
     .scale(traceY)
     .orient("left");
-var traceLine = d3.svg.line()
-    .x(function(d) { return traceX(d.edge_len); })
+
+var traceLines = []
+var addTraceLine = function (ind) {
+  var locInd = ind;
+  return d3.svg.line()
+    .x(function(d) { return traceX(d.edgelen[locInd]); })
     .y(function(d) { return traceY(d.lnL); });
+};
 
-tree1edge1svg_root.attr("width", TRACE_WIDTH)
-    .attr("height", TRACE_HEIGHT)
-  .append("g")
-    .attr("transform", "translate(" + traceMargin.left + "," + traceMargin.top + ")");
+for (i = 0; i < 5; ++i) {
+  traceLines[i] = addTraceLine(i);
+}
 
+var traceData = [];
 
-tree1edge1svg_root.append("g")
-  .attr("class", "x axis")
-  .attr("transform", "translate(0," + traceWriteHeight + ")")
-  .call(traceXAxis);
+for (i = 0 ; i < 5; ++i) {
+  var r = tree1trace_roots[i];
+  r.attr("width", TRACE_WIDTH)
+      .attr("height", TRACE_HEIGHT)
+    .append("g")
+      .attr("transform", "translate(" + traceMargin.left + "," + traceMargin.top + ")");
+  r.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + traceWriteHeight + ")")
+    .call(traceXAxis);
+  r.append("g")
+      .attr("class", "y axis")
+      .call(traceYAxis);
+}
 
-/*
-tree1edge1svg_root.append("g")
-    .attr("class", "y axis")
-    .call(traceYAxis);
-*/
-
-var traceData = [
-  {"edge_len": smallBrLen,
-   "lnL": badLnL
-  }, {
-    "edge_len": 0,
-   "lnL": unconstrainedLnL
-  }, {
-    "edge_len": .25,
-   "lnL": unconstrainedLnL
-  }, {
-    "edge_len": bigBrLen,
-   "lnL": badLnL
-  }, {
-    "edge_len": 0.5,
-   "lnL": badLnL
-  }
-];
-
-tree1edge1svg_root.append("path")
-    .datum(traceData)
-    .attr("class", "line")
-    .attr("d", traceLine);
 
 var refresh_likelihood_traces = function(tree) {
+  var i;
   var p = refresh_probabilities(tree);
   var lnL = calcLnL(p, patfreq, 8, numChars);
   d3.select("#console").text(traceMax + " " + traceMin + " " + smallTreeLnL + " " + bigTreeLnL + " " + badLnL + "\n" + lnL);
+  var xl = traceData.length;
+  var node_data = g_nodes_obj[tree];
+  var currDatum = {
+    "lnL": lnL,
+    "edgelen": [node_data[1].edge.length,
+                node_data[2].edge.length,
+                node_data[3].edge.length,
+                node_data[4].edge.length,
+                node_data[5].edge.length]
+  };
+  traceData[xl] = currDatum;
+  for (i = 0 ; i < 5; ++i) {
+    tree1trace_roots[i].append("path")
+    .datum(traceData)
+    .attr("class", "line")
+    .attr("d", traceLines[i]);
+  }
 };
 
 refresh_probabilities('t1');
