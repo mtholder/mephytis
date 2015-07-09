@@ -171,6 +171,7 @@ var tree1svg_root = d3.select('#tree1svg').append('svg')
     .style('background', 'white');
 
 var tree1trace_roots = [];
+var edgeNames = ["A", "B", "Internal", "C", "D"];
 for (i = 0; i < 5; ++i) {
   var sel = '#tree1edge' + (1 + i) + 'svg';
   var r = d3.select(sel);
@@ -179,6 +180,11 @@ for (i = 0; i < 5; ++i) {
            'height': TRACE_HEIGHT,})
     .style('background', 'white');
   tree1trace_roots[i] = r;
+  r.append("text")
+    .attr("x", 2)
+    .attr("y", TRACE_HEIGHT - 10)
+    .text(edgeNames[i])
+    .attr("font-family", "sans-serif");
 }
 
 var nodeX = function(node) {
@@ -454,7 +460,7 @@ var init_tree_panel = function(o) {
   return dn;
 };
 
-var TREE1COLOR = '#0F0';
+var TREE1COLOR = '#0D0';
 t1n = init_tree_panel({'svg_root': tree1svg_root,
                  'node_array': g_nodes_obj['t1'],
                  'edge_array': g_edges_obj['t1'],
@@ -715,7 +721,7 @@ var addTraceCurrSpots = function (svgcontainer, ind, datum) {
   svgcontainer.selectAll("circle")
     .attr('cx', function(d) { return traceX(d.edgelen[locInd]); })
     .attr('cy', function(d) { return traceY(d.lnL); })
-    .attr('r', 3)
+    .attr('r', 4)
     .attr('fill', TREE1COLOR);
 };
 
