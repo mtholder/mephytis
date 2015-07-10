@@ -278,6 +278,15 @@ var drag_selection = function(selection, dx, dy) {
   });
 }
 
+var optimize_edge = function(selection) {
+  var datum = selection.data()[0];
+  selection.each(function (node_data) {
+      do_optimize_move(node_data, datum.x, datum.y);
+  });
+}
+
+
+
 var do_dragmove = function(node_data, dx, dy) {
   var e = node_data.edge;
   var nx, ny, p_x, p_y, m_x, m_y, par_ind, ang, y_from_x, x_from_y;
@@ -369,6 +378,7 @@ var do_dragmove = function(node_data, dx, dy) {
   refresh_nodes(node_data.svg_container);
   refresh_edges(node_data.svg_container);
   refresh_likelihood_traces(node_data.tree);
+  return {'x':nx, 'y':ny};
 }
 
 
@@ -795,6 +805,97 @@ var toggleTree = function (tree) {
   refresh_hist_bars();
 }
 
+var do_optimize_move = function(node_data, ini_x, ini_y) {
+  var incXOffset, incYOffset;
+  if (node_data.index == 0) {
+    return;
+  }
+  if (node_data.index == 1 || node_data.index == 2) {
+    incXOffset = -ARROW_KEY_PIXEL_JUMP;
+  } else {
+    incXOffset = ARROW_KEY_PIXEL_JUMP;
+  }
+  if (node_data.index == 1 || node_data.index == 4) {
+    incYOffset = -ARROW_KEY_PIXEL_JUMP;
+  } else if (node_data.index == 2 || node_data.index == 5) {
+    incYOffset = ARROW_KEY_PIXEL_JUMP;
+  } else {
+    incYOffset = 0;
+  }
+  var node_array = g_nodes_obj[node_data.tree];
+  var currX = ini_x;
+  var currY = ini_y;
+  var beforeState = traceData[traceData.length - 1];
+  var currState;
+  var maxLnL = beforeState.lnL;
+  var xForMaxLnL = currX;
+  var yForMaxLnL = currY;
+  for (;;) {
+    var prevX = currX;
+    var prevY = currY;
+    currX = prevX + incXOffset;
+    currY = prevY + incYOffset;
+    var newV = do_dragmove(node_data, currX, currY);
+    currState = traceData[traceData.length - 1];
+    currLnL = currState.lnL;
+    currX = newV.x;
+    currY = newV.y;
+    if (currLnL > maxLnL) {
+      maxLnL = currLnL;
+      xForMaxLnL = currX;
+      yForMaxLnL = currY;
+    }
+    if (newV.x == prevX) {
+      break;
+    }
+  }
+  for (;;) {
+    var prevX = currX;
+    var prevY = currY;
+    currX = prevX - incXOffset;
+    currY = prevY - incYOffset;
+    var newV = do_dragmove(node_data, currX, currY);
+    currState = traceData[traceData.length - 1];
+    currLnL = currState.lnL;
+    currX = newV.x;
+    currY = newV.y;
+    if (currLnL > maxLnL) {
+      maxLnL = currLnL;
+      xForMaxLnL = newV.x;
+      yForMaxLnL = newV.y;
+    }
+    if (newV.x == prevX) {
+      break;
+    }
+  }
+  var stopWhenGT; 
+  if (xForMaxLnL > currX) {
+    stopWhenGT = true;
+  } else {
+    stopWhenGT = false;
+  }
+  for (;;) {
+    var prevX = currX;
+    var prevY = currY;
+    currX = prevX + incXOffset;
+    currY = prevY + incYOffset;
+    var newV = do_dragmove(node_data, currX, currY);
+    currState = traceData[traceData.length - 1];
+    currLnL = currState.lnL;
+    if (newV.x == xForMaxLnL) {
+      break;
+    }
+    if (stopWhenGT && newV.x > xForMaxLnL) {
+      do_dragmove(node_data, xForMaxLnL, yForMaxLnL);
+      break;
+    }
+    if ((!stopWhenGT) && newV.x < xForMaxLnL) {
+      do_dragmove(node_data, xForMaxLnL, yForMaxLnL);
+      break;
+    }
+  }
+}
+
 $(document).ready(function() {
     $(document).keydown(function(e) {
       var s = String.fromCharCode(e.keyCode);
@@ -804,7 +905,7 @@ $(document).ready(function() {
       
       if (g_curr_highlighted_selection) {
         var next_node;
-        var dx, dy, move=false;
+        var dx, dy, move=false, optimize=false;
         var datum = g_curr_highlighted_selection.data();
         var d = datum[0];
         if (e.keyCode == 9) { //tab
@@ -863,10 +964,14 @@ $(document).ready(function() {
               dx = d.x + ARROW_KEY_PIXEL_JUMP;
               move = true;
           }
+        } else if (e.keyCode == 79) {// o
+          optimize = true;
         }
         if (move) {
-            drag_selection(g_curr_highlighted_selection, dx, dy);
-          }
+          drag_selection(g_curr_highlighted_selection, dx, dy);
+        } else if (optimize) {
+          optimize_edge(g_curr_highlighted_selection);
+        }
       }
     });
 });
