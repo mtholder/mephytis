@@ -805,6 +805,19 @@ var toggleTree = function (tree) {
   refresh_hist_bars();
 }
 
+/* fill maxLnL fields for new_state */
+var check_max_lnL = function(old_state, new_state) {
+  if (new_state.lnL > old_state.maxLnL) {
+    new_state.maxLnL = new_state.lnL;
+    new_state.xForMaxLnL = new_state.x;
+    new_state.yForMaxLnL = new_state.y;
+  } else {
+    new_state.maxLnL = old_state.maxLnL;
+    new_state.xForMaxLnL = old_state.xForMaxLnL;
+    new_state.yForMaxLnL = old_state.yForMaxLnL;
+  }
+}
+
 var do_optimize_move = function(node_data, ini_x, ini_y) {
   var incXOffset, incYOffset;
   if (node_data.index == 0) {
@@ -823,32 +836,42 @@ var do_optimize_move = function(node_data, ini_x, ini_y) {
     incYOffset = 0;
   }
   var node_array = g_nodes_obj[node_data.tree];
-  var currX = ini_x;
-  var currY = ini_y;
   var beforeState = traceData[traceData.length - 1];
-  var currState;
-  var maxLnL = beforeState.lnL;
-  var xForMaxLnL = currX;
-  var yForMaxLnL = currY;
-  for (;;) {
-    var prevX = currX;
-    var prevY = currY;
-    currX = prevX + incXOffset;
-    currY = prevY + incYOffset;
-    var newV = do_dragmove(node_data, currX, currY);
-    currState = traceData[traceData.length - 1];
-    currLnL = currState.lnL;
-    currX = newV.x;
-    currY = newV.y;
-    if (currLnL > maxLnL) {
-      maxLnL = currLnL;
-      xForMaxLnL = currX;
-      yForMaxLnL = currY;
+  var bumpState = {
+    'maxLnL' : beforeState.lnL,
+    'xForMaxLnL' : ini_x,
+    'yForMaxLnL' : ini_y,
+    'x': ini_x,
+    'y': ini_y,
+    'prevx': -10000,
+  };
+  var bumpDown = function () {
+    bumpState.prevx = bumpState.x;
+    var newV = do_dragmove(node_data, bumpState.x - incXOffset, bumpState.y - incYOffset);
+    bumpState.lnL = traceData[traceData.length - 1].lnL;
+    bumpState.x = newV.x;
+    bumpState.y = newV.y;
+    check_max_lnL(bumpState, bumpState);
+    if (bumpState.prevx != bumpState.x) {
+      setTimeout(function() {bumpDown();}, 100);
     }
-    if (newV.x == prevX) {
-      break;
+  };
+  var bumpUp = function () {
+    bumpState.prevx = bumpState.x;
+    var newV = do_dragmove(node_data, bumpState.x + incXOffset, bumpState.y + incYOffset);
+    bumpState.lnL = traceData[traceData.length - 1].lnL;
+    bumpState.x = newV.x;
+    bumpState.y = newV.y;
+    check_max_lnL(bumpState, bumpState);
+    if (bumpState.prevx != bumpState.x) {
+      setTimeout(function() {bumpUp();}, 100);
+    } else {
+      bumpDown();
     }
-  }
+  };
+  bumpUp();
+//  bumpDown();
+  /*
   for (;;) {
     var prevX = currX;
     var prevY = currY;
@@ -893,8 +916,32 @@ var do_optimize_move = function(node_data, ini_x, ini_y) {
       do_dragmove(node_data, xForMaxLnL, yForMaxLnL);
       break;
     }
-  }
+  } */
 }
+
+/* function doCalculation()
+{
+   //do your thing for a short time
+
+   //figure out how complete you are
+   var percent_complete=....
+
+   return percent_complete;
+}
+
+function pump()
+{
+   var percent_complete=doCalculation();
+
+   //maybe update a progress meter here!
+
+   //carry on pumping?
+   if (percent_complete<100)
+   {
+      setTimeout(pump, 50);
+   }
+}
+*/
 
 $(document).ready(function() {
     $(document).keydown(function(e) {
