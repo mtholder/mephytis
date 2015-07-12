@@ -845,6 +845,26 @@ var do_optimize_move = function(node_data, ini_x, ini_y) {
     'y': ini_y,
     'prevx': -10000,
   };
+  var pauseTime = 40;
+  var bumpToOpt = function() {
+    bumpState.prevx = bumpState.x;
+    var newV = do_dragmove(node_data, bumpState.x + incXOffset, bumpState.y + incYOffset);
+    bumpState.lnL = traceData[traceData.length - 1].lnL;
+    bumpState.x = newV.x;
+    bumpState.y = newV.y;
+    if (newV.x == bumpState.xForMaxLnL) {
+      return;
+    }
+    if (bumpState.stopWhenGT && newV.x > bumpState.xForMaxLnL) {
+      do_dragmove(node_data, bumpState.xForMaxLnL, bumpState.yForMaxLnL);
+      return;
+    }
+    if ((!bumpState.stopWhenGT) && newV.x < bumpState.xForMaxLnL) {
+      do_dragmove(node_data, bumpState.xForMaxLnL, bumpState.yForMaxLnL);
+      return;
+    }
+    setTimeout(function() {bumpToOpt();}, pauseTime);
+  };
   var bumpDown = function () {
     bumpState.prevx = bumpState.x;
     var newV = do_dragmove(node_data, bumpState.x - incXOffset, bumpState.y - incYOffset);
@@ -853,7 +873,14 @@ var do_optimize_move = function(node_data, ini_x, ini_y) {
     bumpState.y = newV.y;
     check_max_lnL(bumpState, bumpState);
     if (bumpState.prevx != bumpState.x) {
-      setTimeout(function() {bumpDown();}, 100);
+      setTimeout(function() {bumpDown();}, pauseTime);
+    } else {
+      if (bumpState.xForMaxLnL > bumpState.x) {
+        bumpState.stopWhenGT = true;
+      } else {
+        bumpState.stopWhenGT = false;
+      }
+      bumpToOpt();
     }
   };
   var bumpUp = function () {
@@ -864,7 +891,7 @@ var do_optimize_move = function(node_data, ini_x, ini_y) {
     bumpState.y = newV.y;
     check_max_lnL(bumpState, bumpState);
     if (bumpState.prevx != bumpState.x) {
-      setTimeout(function() {bumpUp();}, 100);
+      setTimeout(function() {bumpUp();}, pauseTime);
     } else {
       bumpDown();
     }
