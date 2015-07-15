@@ -58,6 +58,7 @@ and http://bl.ocks.org/mbostock/4063550
 <body>
 <script src="d3/d3.v3.min.js"></script>
 <script src="jquery/jquery.v2.min.js"></script>
+<p id="help"></p>
 <p id="lnLElement">LnL</p>
 <div>
   <div id="histpar" />
@@ -71,6 +72,8 @@ and http://bl.ocks.org/mbostock/4063550
 <p id="console"></p>
 <!-- footer -->
 <h4></h4>
+
+<p>Press the <i>h</i> key to see the help message.</p>
 <p>Back to the demo <a href="./index.html">table of contents...</a></p>
 <p> Source code at <a href="https://github.com/mtholder/mephytis">https://github.com/mtholder/mephytis</a></p>
 
@@ -969,6 +972,34 @@ function pump()
    }
 }
 */
+var showingHelp = false;
+
+var show_help = function() {
+  d3.select("#help").html(
+    "Press <i>h</i> to hide this help message. <br/>" +
+    "The black bars show the relative frequency of patterns in a " +
+    "data set that was generated from this tree." +
+    "<br/>The green bars shows the probability of each data" + 
+    " according to the Cavendar-Farris-Neyman model (a 2-state" +
+    " version of the Jukes-Cantor model)." +
+    "<br />The orange node is the currently highlighted node. You can" +
+    " use the arrow keys to change the branch length of this node. You" +
+    " can use the tab key to switch to the next node. " +
+    "<br />The 5 trace plots below the histogram show the log-likelihood of the" +
+    " as a function of the length of each branch (see the label of each plot)." +
+    " The colored dot shows the log-likelihood for the current set of branch lengths." +
+    " Note that if the branch lengths are very far from optimal, then the likelihood" +
+    " may be too low to show up on the plot. Note that the MLE for one branch " + 
+    " depends on the length of the other branches." +
+    "<br />If you press the <i>o</i> key then the program will trace through the" +
+    " possible lengths for the selected branch, and settle on the optimal value."
+  );
+  showingHelp = true;
+};
+var hide_help = function() {
+  d3.select("#help").text("");
+  showingHelp = false;
+};
 
 $(document).ready(function() {
     $(document).keydown(function(e) {
@@ -1037,6 +1068,12 @@ $(document).ready(function() {
           } else if (d.index == 3) {
               dx = d.x + ARROW_KEY_PIXEL_JUMP;
               move = true;
+          }
+        } else if (e.keyCode == 72) {// h
+          if (showingHelp) {
+            hide_help();
+          } else {
+            show_help();
           }
         } else if (e.keyCode == 79) {// o
           optimize = true;
