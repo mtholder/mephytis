@@ -691,7 +691,7 @@ var bigTreeProbs = calc_probs_on_12v45_tree(proxySmallTree);
 var bigTreeLnL = calcLnL(bigTreeProbs, patfreq, 8, numChars);
 var badLnL = (bigTreeLnL > smallTreeLnL ? smallTreeLnL : bigTreeLnL);
 var unconstrainedLnL = calcLnL(patfreq, patfreq, 8, numChars);
-var traceMax = unconstrainedLnL //Math.ceil(unconstrainedLnL);
+var traceMax = Math.ceil(unconstrainedLnL);
 var traceMin = Math.floor(badLnL);
 
 
@@ -845,7 +845,7 @@ var do_optimize_move = function(node_data, ini_x, ini_y) {
     'y': ini_y,
     'prevx': -10000,
   };
-  var pauseTime = 40;
+  var pauseTime = 20;
   var bumpToOpt = function() {
     bumpState.prevx = bumpState.x;
     var newV = do_dragmove(node_data, bumpState.x + incXOffset, bumpState.y + incYOffset);
@@ -863,7 +863,7 @@ var do_optimize_move = function(node_data, ini_x, ini_y) {
       do_dragmove(node_data, bumpState.xForMaxLnL, bumpState.yForMaxLnL);
       return;
     }
-    setTimeout(function() {bumpToOpt();}, pauseTime);
+    setTimeout(function() {bumpToOpt();}, pauseTime/2);
   };
   var bumpDown = function () {
     bumpState.prevx = bumpState.x;
