@@ -1055,7 +1055,9 @@ var do_optimize_move = function(node_data, ini_x, ini_y) {
       } else {
         bumpState.stopWhenGT = false;
       }
-      bumpToOpt();
+      if (bumpState.maxLnL > bumpState.lnL) {
+        bumpToOpt();
+      }
     }
   };
   var bumpUp = function () {
