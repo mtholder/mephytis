@@ -904,78 +904,8 @@ var do_optimize_move = function(node_data, ini_x, ini_y) {
     }
   };
   bumpUp();
-//  bumpDown();
-  /*
-  for (;;) {
-    var prevX = currX;
-    var prevY = currY;
-    currX = prevX - incXOffset;
-    currY = prevY - incYOffset;
-    var newV = do_dragmove(node_data, currX, currY);
-    currState = traceData[traceData.length - 1];
-    currLnL = currState.lnL;
-    currX = newV.x;
-    currY = newV.y;
-    if (currLnL > maxLnL) {
-      maxLnL = currLnL;
-      xForMaxLnL = newV.x;
-      yForMaxLnL = newV.y;
-    }
-    if (newV.x == prevX) {
-      break;
-    }
-  }
-  var stopWhenGT; 
-  if (xForMaxLnL > currX) {
-    stopWhenGT = true;
-  } else {
-    stopWhenGT = false;
-  }
-  for (;;) {
-    var prevX = currX;
-    var prevY = currY;
-    currX = prevX + incXOffset;
-    currY = prevY + incYOffset;
-    var newV = do_dragmove(node_data, currX, currY);
-    currState = traceData[traceData.length - 1];
-    currLnL = currState.lnL;
-    if (newV.x == xForMaxLnL) {
-      break;
-    }
-    if (stopWhenGT && newV.x > xForMaxLnL) {
-      do_dragmove(node_data, xForMaxLnL, yForMaxLnL);
-      break;
-    }
-    if ((!stopWhenGT) && newV.x < xForMaxLnL) {
-      do_dragmove(node_data, xForMaxLnL, yForMaxLnL);
-      break;
-    }
-  } */
 }
 
-/* function doCalculation()
-{
-   //do your thing for a short time
-
-   //figure out how complete you are
-   var percent_complete=....
-
-   return percent_complete;
-}
-
-function pump()
-{
-   var percent_complete=doCalculation();
-
-   //maybe update a progress meter here!
-
-   //carry on pumping?
-   if (percent_complete<100)
-   {
-      setTimeout(pump, 50);
-   }
-}
-*/
 var showingHelp = false;
 
 var show_help = function() {
@@ -1005,6 +935,18 @@ var hide_help = function() {
   showingHelp = false;
 };
 
+var advanceSelectedNode = function() {
+  var next_node;
+  var datum = g_curr_highlighted_selection.data();
+  var d = datum[0];
+  if (d.index == 5) {
+    next_node = d3.select('#' + d.tree + 'n1');
+  } else {
+    next_node = d3.select('#' + d.tree + 'n' + (1 + d.index));
+  }
+  do_highlight_node(next_node);
+}
+
 $(document).ready(function() {
     $(document).keydown(function(e) {
       var s = String.fromCharCode(e.keyCode);
@@ -1013,17 +955,11 @@ $(document).ready(function() {
       }
       
       if (g_curr_highlighted_selection) {
-        var next_node;
         var dx, dy, move=false, optimize=false;
         var datum = g_curr_highlighted_selection.data();
         var d = datum[0];
         if (e.keyCode == 9) { //tab
-          if (d.index == 5) {
-            next_node = d3.select('#' + d.tree + 'n1');
-          } else {
-            next_node = d3.select('#' + d.tree + 'n' + (1 + d.index));
-          }
-          do_highlight_node(next_node);
+          advanceSelectedNode();
           e.preventDefault();
           return;
         } else if (e.keyCode == 38) { // arrow up...
