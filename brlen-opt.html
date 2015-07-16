@@ -291,16 +291,15 @@ var optimize_edge = function(selection) {
       do_optimize_move(node_data, datum.x, datum.y);
   });
 }
-var sweepOptState = {'prevLnL': -1e200};
+var sweepOptState = {'prevLnL': -1e200, 
+  'intervalEvent':null};
 
 var pauseTime = 20;
 var TOL = 1E-05;
-var blocking_optimize_edge = function() {
+var intervalOptAllEdges = function() {
   var ind;
   var lnlforInd1 = 0;
-  if (currentlyOptimizing != -1) {
-    setTimeout(blocking_optimize_edge, 2*pauseTime);
-  } else {
+  if (currentlyOptimizing == -1) {
     advanceSelectedNode();
     ind = g_curr_highlighted_selection.data()[0].index;
     currentlyOptimizing = 1;
@@ -309,11 +308,11 @@ var blocking_optimize_edge = function() {
       if (ind == 5) {
         lnlforInd1 = traceData[traceData.length - 1].lnL;
         if (lnlforInd1 - sweepOptState.prevLnL <= TOL) {
+          clearInterval(sweepOptState.intervalEvent);
           return;
         }
         sweepOptState.prevLnL = lnlforInd1;
       }
-      setTimeout(blocking_optimize_edge, 2*pauseTime);
     }
   }
 }
@@ -322,7 +321,7 @@ var optimize_all_edges = function() {
   var ii;
   currentlyOptimizing = 1;
   optimize_edge(g_curr_highlighted_selection);
-  blocking_optimize_edge();
+  sweepOptState.intervalEvent = setInterval(intervalOptAllEdges, 5*pauseTime);
 };
 
 var do_dragmove = function(node_data, dx, dy) {
