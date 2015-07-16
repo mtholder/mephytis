@@ -856,6 +856,8 @@ var check_max_lnL = function(old_state, new_state) {
   }
 }
 
+var singleEdgeOptEvent = null;
+
 var do_optimize_move = function(node_data, ini_x, ini_y) {
   currentlyOptimizing = node_data.index;
   var incXOffset, incYOffset;
@@ -893,19 +895,24 @@ var do_optimize_move = function(node_data, ini_x, ini_y) {
     bumpState.y = newV.y;
     if (newV.x == bumpState.xForMaxLnL) {
       currentlyOptimizing = -1;
+      clearInterval(singleEdgeOptEvent);
+      singleEdgeOptEvent = null;
       return;
     }
     if (bumpState.stopWhenGT && newV.x > bumpState.xForMaxLnL) {
       do_dragmove(node_data, bumpState.xForMaxLnL, bumpState.yForMaxLnL);
       currentlyOptimizing = -1;
+      clearInterval(singleEdgeOptEvent);
+      singleEdgeOptEvent = null;
       return;
     }
     if ((!bumpState.stopWhenGT) && newV.x < bumpState.xForMaxLnL) {
       do_dragmove(node_data, bumpState.xForMaxLnL, bumpState.yForMaxLnL);
       currentlyOptimizing = -1;
+      clearInterval(singleEdgeOptEvent);
+      singleEdgeOptEvent = null;
       return;
     }
-    setTimeout(function() {bumpToOpt();}, pauseTime/2);
   };
   var bumpDown = function () {
     bumpState.prevx = bumpState.x;
@@ -914,15 +921,15 @@ var do_optimize_move = function(node_data, ini_x, ini_y) {
     bumpState.x = newV.x;
     bumpState.y = newV.y;
     check_max_lnL(bumpState, bumpState);
-    if (bumpState.prevx != bumpState.x) {
-      setTimeout(function() {bumpDown();}, pauseTime);
-    } else {
+    if (bumpState.prevx == bumpState.x) {
       if (bumpState.xForMaxLnL > bumpState.x) {
         bumpState.stopWhenGT = true;
       } else {
         bumpState.stopWhenGT = false;
       }
-      bumpToOpt();
+      clearInterval(singleEdgeOptEvent);
+      singleEdgeOptEvent = null;
+      singleEdgeOptEvent = setInterval(bumpToOpt, pauseTime/2);
     }
   };
   var bumpUp = function () {
@@ -932,13 +939,13 @@ var do_optimize_move = function(node_data, ini_x, ini_y) {
     bumpState.x = newV.x;
     bumpState.y = newV.y;
     check_max_lnL(bumpState, bumpState);
-    if (bumpState.prevx != bumpState.x) {
-      setTimeout(function() {bumpUp();}, pauseTime);
-    } else {
-      bumpDown();
+    if (bumpState.prevx == bumpState.x) {
+      clearInterval(singleEdgeOptEvent);
+      singleEdgeOptEvent = null;
+      singleEdgeOptEvent = setInterval(bumpDown, pauseTime);
     }
   };
-  bumpUp();
+  singleEdgeOptEvent = setInterval(bumpUp, pauseTime);
 }
 
 var showingHelp = false;
