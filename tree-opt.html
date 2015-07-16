@@ -51,11 +51,11 @@ and http://bl.ocks.org/mbostock/4063550
 }
 
 .x.axis path {
-  stroke: #000;
+  stroke: none;
 }
 .y.axis path {
-  fill: #000;
-  stroke: #000;
+  fill: none;
+  stroke: none;
 }
 
 </style>
@@ -63,16 +63,16 @@ and http://bl.ocks.org/mbostock/4063550
 <script src="d3/d3.v3.min.js"></script>
 <script src="jquery/jquery.v2.min.js"></script>
 <p id="help"></p>
-<p id="lnLElement">LnL</p>
+<table>
+  <tr><td><div id="lnTracesvg"/></td></tr>
+</table>
+<!--p id="lnLElement">LnL</p!-->
 <div>
   <div id="histpar" />
 </div>
 <table>
   <tr><td><div id="tree1svg"/></td><td><div id="hist"/></td></tr>
   <tr><td><div id="tree2svg"/></td><td><div id="tree3svg"/></td></tr>
-</table>
-<table>
-  <tr><td><div id="tree1edge1svg"/></td><td><div id="tree1edge2svg"/></td><td><div id="tree1edge3svg"/></td><td><div id="tree1edge4svg"/></td><td><div id="tree1edge5svg"/></td></tr>
 </table>
 <p id="console"></p>
 <!-- footer -->
@@ -92,8 +92,8 @@ var TREE_WIDTH = 290;
 var TREE_HEIGHT = 220;
 var HIST_WIDTH = 300;
 var HIST_HEIGHT = 300;
-var TRACE_HEIGHT  = TREE_HEIGHT*.75;
-var TRACE_WIDTH = 150;
+var TRACE_HEIGHT  = 40;
+var TRACE_WIDTH = 500;
 
 var scaler = 200;
 var max_len = 0.5;
@@ -284,21 +284,14 @@ var tree3svg_root = d3.select('#tree3svg').append('svg')
     .style('background', 'white');
 
 var tree1trace_roots = [];
-var edgeNames = ["A", "B", "Internal", "C", "D"];
-for (i = 0; i < 5; ++i) {
-  var sel = '#tree1edge' + (1 + i) + 'svg';
-  var r = d3.select(sel);
-  r = r.append('svg');
-  r.attr({'width':  TRACE_WIDTH,
+r = d3.select('#lnTracesvg');
+r = r.append('svg');
+r.attr({'width':  TRACE_WIDTH,
            'height': TRACE_HEIGHT,})
-    .style('background', 'white');
-  tree1trace_roots[i] = r;
-  r.append("text")
-    .attr("x", 10)
-    .attr("y", TRACE_HEIGHT - 10)
-    .text(edgeNames[i])
-    .attr("font-family", "sans-serif");
-}
+  .style('background', 'white');
+tree1trace_roots[0] = r;
+
+
 
 var nodeX = function(node) {
   var e = node.edge;
@@ -871,18 +864,18 @@ var traceMin = Math.floor(badLnL);
 var traceMargin = {top: 5, right: 5, bottom: 3, left: 3};
 var traceWriteWidth = TRACE_WIDTH - traceMargin.left - traceMargin.right;
 var traceWriteHeight = TRACE_HEIGHT - traceMargin.top - traceMargin.bottom;
-var traceX = d3.scale.linear()
+var traceTree = d3.scale.linear()
+    .range([0, traceWriteHeight])
+    .domain([-1, 4]);
+var traceLnL = d3.scale.linear()
     .range([0, traceWriteWidth])
-    .domain([0, 0.5]);
-var traceY = d3.scale.linear()
-    .range([traceWriteHeight, 0])
     .domain([traceMin, traceMax]);
 var traceXAxis = d3.svg.axis()
-    .scale(traceX)
-    .orient("bottom");
+    .scale(traceLnL)
+    .orient("right");
 var traceYAxis = d3.svg.axis()
-    .scale(traceY)
-    .orient("left");
+    .scale(traceTree)
+    .orient("top");
 
 var traceLines = [];
 var currSpots = [];
@@ -890,8 +883,8 @@ var currSpots = [];
 var addTraceLine = function (ind) {
   var locInd = ind;
   return d3.svg.line()
-    .x(function(d) { return traceX(d.edgelen[locInd]); })
-    .y(function(d) { return traceY(d.lnL); });
+    .y(function(d) { return traceTree(locInd); })
+    .x(function(d) { return traceLnL(d.lnL); });
 };
 
 var addTraceCurrSpots = function (svgcontainer, ind, datum) {
@@ -902,8 +895,8 @@ var addTraceCurrSpots = function (svgcontainer, ind, datum) {
     .enter()
     .append('circle');
   svgcontainer.selectAll("circle")
-    .attr('cx', function(d) { return traceX(d.edgelen[locInd]); })
-    .attr('cy', function(d) { return traceY(d.lnL); })
+    .attr('cy', function(d) { return traceTree(locInd); })
+    .attr('cx', function(d) { return traceLnL(d.lnL); })
     .attr('r', 4)
     .attr('fill', TREE1COLOR);
 };
@@ -915,7 +908,7 @@ for (i = 0; i < 5; ++i) {
 var traceData = [];
 var currentlyOptimizing = -1;
 
-for (i = 0 ; i < 5; ++i) {
+for (i = 0 ; i < 1; ++i) {
   var r = tree1trace_roots[i];
   r.attr("width", TRACE_WIDTH)
       .attr("height", TRACE_HEIGHT)
@@ -945,8 +938,8 @@ var refresh_likelihood_traces = function(tree) {
                              );
   */
   var lnL = calcLnL(p, patfreq, 8, numChars);
-  d3.select("#lnLElement").text("lnL = " + lnL);
-  var xl = traceData.length;
+  //d3.select("#lnLElement").text("lnL = " + lnL);
+  var xl = traceData.length - 1;
   var node_data = g_nodes_obj[tree];
   var currDatum = {
     "lnL": lnL,
@@ -957,7 +950,7 @@ var refresh_likelihood_traces = function(tree) {
                 node_data[5].edge.length]
   };
   traceData[xl] = currDatum;
-  for (i = 0 ; i < 5; ++i) {
+  for (i = 0 ; i < 1; ++i) {
     var r = tree1trace_roots[i];
     r.append("path")
     .datum(traceData)
