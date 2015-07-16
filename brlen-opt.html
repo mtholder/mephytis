@@ -51,7 +51,11 @@ and http://bl.ocks.org/mbostock/4063550
 }
 
 .x.axis path {
-  display: none;
+  stroke: #000;
+}
+.y.axis path {
+  fill: #000;
+  stroke: #000;
 }
 
 </style>
@@ -184,7 +188,7 @@ for (i = 0; i < 5; ++i) {
     .style('background', 'white');
   tree1trace_roots[i] = r;
   r.append("text")
-    .attr("x", 2)
+    .attr("x", 10)
     .attr("y", TRACE_HEIGHT - 10)
     .text(edgeNames[i])
     .attr("font-family", "sans-serif");
@@ -1076,6 +1080,8 @@ $(document).ready(function() {
             show_help();
           }
         } else if (e.keyCode == 79) {// o
+          optimize = true;
+        } else if (e.keyCode == 83) {// s
           optimize = true;
         }
         if (move) {
