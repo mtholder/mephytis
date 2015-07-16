@@ -423,7 +423,9 @@ var intervalOptAllEdges = function() {
   }
 }
 var optimize_all_edges = function() {
-  var treeIndOpting = tree2treeInd[g_curr_highlighted_selection.data().tree];
+  var nodeData = g_curr_highlighted_selection.data()[0];
+  var treeKey = nodeData.tree;
+  var treeIndOpting = tree2treeInd[treeKey];
   sweepOptState.prevLnL = traceData[treeIndOpting].lnL;
   var ii;
   currentlyOptimizing = 1;
@@ -804,6 +806,7 @@ for (i = 0; i < 8; ++i) {
 var patfreq = [];
 for (i = 0; i < 8; ++i) {
   patfreq[i] = patCounts[i]/numChars;
+  prob_vec[i] = patfreq[i];
 }
 
 numChars *= 10 ;
