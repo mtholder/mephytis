@@ -57,7 +57,9 @@ and http://bl.ocks.org/mbostock/4063550
   fill: #000;
   stroke: #000;
 }
-
+#lnLElement {
+  font-size: 200%;
+}
 </style>
 <body>
 <script src="d3/d3.v3.min.js"></script>
@@ -809,7 +811,7 @@ var refresh_likelihood_traces = function(tree) {
                              );
   */
   var lnL = calcLnL(p, patfreq, 8, numChars);
-  d3.select("#lnLElement").text("lnL = " + lnL);
+  d3.select("#lnLElement").text("lnL = " + lnL.toFixed(3));
   var xl = traceData.length;
   var node_data = g_nodes_obj[tree];
   var currDatum = {
