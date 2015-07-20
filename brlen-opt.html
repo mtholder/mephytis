@@ -102,7 +102,7 @@ var UP_ANGLE = Math.PI/2; // 90 degree up
 var DOWN_ANGLE = 3*Math.PI/2; // 90 degree down
 var TOL = 0.01;
 var NODE_COLOR = '#88f';
-var NODE_HIGHLIGHT_COLOR = "#EA0";
+var NODE_HIGHLIGHT_COLOR = "#000";
 var ARROW_KEY_PIXEL_JUMP = 1;
 var STARTING_EDGE_LENGTH = 0.2;
 var g_nodes_obj = {
@@ -953,7 +953,7 @@ var show_help = function() {
     "<br/>The green bars shows the probability of each data" + 
     " according to the Cavendar-Farris-Neyman model (a 2-state" +
     " version of the Jukes-Cantor model)." +
-    "<br />The orange node is the currently highlighted node. You can" +
+    "<br />The black node is the currently highlighted node. You can" +
     " use the arrow keys to change the branch length of this node. You" +
     " can use the tab key to switch to the next node. " +
     "<br />The 5 trace plots below the histogram show the log-likelihood of the" +
