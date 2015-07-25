@@ -33,7 +33,7 @@
 }
 </style>
 <body>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+<script src="d3/d3.v3.min.js"></script>
 <p>based on an example from <a href="http://bl.ocks.org/mbostock/6452972">http://bl.ocks.org/mbostock/6452972</a></p>
 <script>
 var margin = {
@@ -44,7 +44,7 @@ var margin = {
 var width = 960 - margin.left - margin.right;
 var height = 500 - margin.bottom - margin.top;
 var x = d3.scale.linear()
-    .domain([0, 180])
+    .domain([-1, 1])
     .range([0, width])
     .clamp(true);
 var jsonCircles = [{ "x_axis": 30,
@@ -55,6 +55,7 @@ var brush = d3.svg.brush()
     .x(x)
     .extent([0, 0])
     .on("brush", brushed);
+
 var svg = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
@@ -66,7 +67,6 @@ svg.append("g")
     .call(d3.svg.axis()
       .scale(x)
       .orient("bottom")
-      .tickFormat(function(d) { return d + "°"; })
       .tickSize(0)
       .tickPadding(12))
   .select(".domain")
@@ -76,11 +76,6 @@ var circle = svg.selectAll("circle")
                          .data(jsonCircles)
                          .enter()
                          .append("circle");
-var circleAttributes = circle
-                      .attr("cx", function (d) { return d.x_axis; })
-                      .attr("cy", function (d) { return d.y_axis; })
-                      .attr("r", function (d) { return d.radius; })
-                      .style("fill", function(d) { return d.color; });
 var slider = svg.append("g")
     .attr("class", "slider")
     .call(brush);
@@ -95,14 +90,23 @@ var handle = slider.append("rect")
     .attr("x", 0)
     .attr("width", 18)
     .attr("height", 18);
-slider.call(brush.event);
+
+var updateCurvature = function (value) {
+  jsonCircles[0].x_axis = value;
+  circle.attr("cx", function (d) { return x(d.x_axis); })
+      .attr("cy", function (d) { return d.y_axis; })
+      .attr("r", function (d) { return d.radius; })
+      .style("fill", function(d) { return d.color; });
+};
 function brushed() {
   var value = brush.extent()[0];
-  if (d3.event.sourceEvent) { // not a programmatic event
+  if (d3.event && d3.event.sourceEvent) { // not a programmatic event
     value = x.invert(d3.mouse(this)[0]);
     brush.extent([value, value]);
   }
-  handle.attr("x", x(value));
-  d3.select("body").style("background-color", d3.hsl(value, .8, .8));
+  handle.attr("x", x(value) - 9);
+  updateCurvature(value);
 }
+slider.call(brushed);
+updateCurvature(0);
 </script>
