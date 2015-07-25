@@ -153,20 +153,36 @@ var updateCurvature = function (value) {
     var r = 0.3/c;
     var center_x = -1.0*r;
     var angle = Math.PI*(c)/4;
-    var p_x = center_x + r * Math.cos(angle);
-    var p_y = -r * Math.sin(angle);
+    var cosa = Math.cos(angle);
+    var sina = Math.sin(angle);
+    var p_x = center_x + r * cosa;
+    var p_y = -r * sina;
     var h_x = center_x + r * Math.cos(angle/2);
     var h_y = -r * Math.sin(angle/2);
-
+    var slope = -cosa / sina;
+    var rise_t = 1 - r*sina;
+    var run_t = rise_t/slope;
+    var t_x = p_x + run_t;
+    var run_l = p_x - 1;
+    var rise_l = slope*rise_l;
+    var l_y = p_y + rise_l;
+    var z_x, z_y;
+    if (t_x < -1) {
+      z_x = -1;
+      z_y = l_y;
+    } else {
+      z_x = t_x;
+      z_y = -1;
+    }
     u1Point.x = value;
     u2Point.x = value/3;
     u2Point.y = -1 - value/2.5;
     u3Point.x = value/100;
 
-    u1Point.x = p_x;
-    u1Point.y = p_y;
-    u2Point.x = p_x;
-    u2Point.y = p_y;
+    u1Point.x = z_x;
+    u1Point.y = z_y;
+    u2Point.x = (z_x + p_x)/2;
+    u2Point.y = (z_y + p_y)/2;
     u3Point.x = p_x;
     u3Point.y = p_y;
     u4Point.x = h_x;
