@@ -42,6 +42,7 @@ var margin = {
   bottom: 200,
   left: 50};
 var width = 960 - margin.left - margin.right;
+var halfWidth = width/2;
 var height = 500 - margin.bottom - margin.top;
 var x = d3.scale.linear()
     .domain([-1, 1])
@@ -90,9 +91,24 @@ var handle = slider.append("rect")
     .attr("x", 0)
     .attr("width", 18)
     .attr("height", 18);
-
+var nullCircle = jsonCircles[0];
 var updateCurvature = function (value) {
-  jsonCircles[0].x_axis = value;
+  var r;
+  if (value < 0) {
+    r = 1.0 + value;
+    nx = - r;
+    if (nx < -1.0) {
+        nx = -1;
+        r = 1;
+    } else {
+        r = r;
+    }
+  } else {
+    r = 0;
+    nx = 0;
+  }
+  nullCircle.radius = halfWidth*r;
+  nullCircle.x_axis = nx;
   circle.attr("cx", function (d) { return x(d.x_axis); })
       .attr("cy", function (d) { return d.y_axis; })
       .attr("r", function (d) { return d.radius; })
