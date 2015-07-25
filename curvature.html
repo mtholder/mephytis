@@ -37,23 +37,24 @@
 <p>based on an example from <a href="http://bl.ocks.org/mbostock/6452972">http://bl.ocks.org/mbostock/6452972</a></p>
 <script>
 var margin = {
-  top: 200,
+  top: 50,
   right: 50,
   bottom: 200,
   left: 50};
 var width = 960 - margin.left - margin.right;
 var halfWidth = width/2;
-var height = 500 - margin.bottom - margin.top;
-var x = d3.scale.linear()
+var height = 400 - margin.bottom - margin.top;
+var xScale = d3.scale.linear()
     .domain([-1, 1])
     .range([0, width])
     .clamp(true);
+var midHeight = 20;
 var jsonCircles = [{ "x_axis": 30,
-                     "y_axis": 30,
+                     "y_axis": midHeight,
                      "radius": 20,
                      "color" : "green" },];
 var brush = d3.svg.brush()
-    .x(x)
+    .x(xScale)
     .extent([0, 0])
     .on("brush", brushed);
 
@@ -66,7 +67,7 @@ svg.append("g")
     .attr("class", "x axis")
     .attr("transform", "translate(0," + height / 2 + ")")
     .call(d3.svg.axis()
-      .scale(x)
+      .scale(xScale)
       .orient("bottom")
       .tickSize(0)
       .tickPadding(12))
@@ -77,6 +78,7 @@ var circle = svg.selectAll("circle")
                          .data(jsonCircles)
                          .enter()
                          .append("circle");
+var nullpath = svg.append("path");
 var slider = svg.append("g")
     .attr("class", "slider")
     .call(brush);
@@ -92,6 +94,39 @@ var handle = slider.append("rect")
     .attr("width", 18)
     .attr("height", 18);
 var nullCircle = jsonCircles[0];
+var lineFunction = d3.svg.line()
+                        .x(function(d) { return xScale(d.x); })
+                        .y(function(d) { return -10 + (300)*(.5 + d.y); })
+                        .interpolate("basis-closed");
+var midPoint = {"x": -1, "y": 0};
+var upperLeft = {"x": -1, "y": -1};
+var lowerLeft = {"x": -1, "y": 1};
+var lfcPoint = {"x": 0, "y": 0};
+var u1Point = {"x": 0, "y": -2};
+var u2Point = {"x": 0, "y": -1};
+var u3Point = {"x": 0, "y": -.1};
+var u4Point = {"x": 0, "y": 0};
+var l1Point = {"x": 0, "y": 2};
+var l2Point = {"x": 0, "y": 1};
+var l3Point = {"x": 0, "y": .1};
+var l4Point = {"x": 0, "y": 0};
+var nullLineData = [midPoint,
+                    upperLeft,
+                    upperLeft,
+                    upperLeft,
+                    u1Point,
+                    u2Point,
+                    u3Point,
+                    u4Point,
+                    lfcPoint,
+                    l4Point,
+                    l3Point,
+                    l2Point,
+                    l1Point,
+                    lowerLeft,
+                    lowerLeft,
+                    lowerLeft
+                    ]
 var updateCurvature = function (value) {
   var r;
   if (value < 0) {
@@ -109,18 +144,56 @@ var updateCurvature = function (value) {
   }
   nullCircle.radius = halfWidth*r;
   nullCircle.x_axis = nx;
-  circle.attr("cx", function (d) { return x(d.x_axis); })
-      .attr("cy", function (d) { return d.y_axis; })
-      .attr("r", function (d) { return d.radius; })
-      .style("fill", function(d) { return d.color; });
+  //circle.attr("cx", function (d) { return xScale(d.x_axis); })
+  //    .attr("cy", function (d) { return d.y_axis; })
+  //    .attr("r", function (d) { return d.radius; })
+  //    .style("fill", function(d) { return d.color; });
+  if (value < 0) {
+    var c = -value;
+    var r = 0.3/c;
+    var center_x = -1.0*r;
+    var angle = Math.PI*(c)/4;
+    var p_x = center_x + r * Math.cos(angle);
+    var p_y = -r * Math.sin(angle);
+    var h_x = center_x + r * Math.cos(angle/2);
+    var h_y = -r * Math.sin(angle/2);
+
+    u1Point.x = value;
+    u2Point.x = value/3;
+    u2Point.y = -1 - value/2.5;
+    u3Point.x = value/100;
+
+    u1Point.x = p_x;
+    u1Point.y = p_y;
+    u2Point.x = p_x;
+    u2Point.y = p_y;
+    u3Point.x = p_x;
+    u3Point.y = p_y;
+    u4Point.x = h_x;
+    u4Point.y = h_y;
+    
+    l1Point.x = u1Point.x;
+    l2Point.x = u2Point.x;
+    l3Point.x = u3Point.x;
+    l4Point.x = u4Point.x;
+    l1Point.y = -u1Point.y;
+    l2Point.y = -u2Point.y;
+    l3Point.y = -u3Point.y;
+    l4Point.y = -u4Point.y;
+  }
+
+  nullpath.attr("d", lineFunction(nullLineData))
+                           .attr("stroke", "blue")
+                           .attr("stroke-width", 2)
+                           .attr("fill", "blue");
 };
 function brushed() {
   var value = brush.extent()[0];
   if (d3.event && d3.event.sourceEvent) { // not a programmatic event
-    value = x.invert(d3.mouse(this)[0]);
+    value = xScale.invert(d3.mouse(this)[0]);
     brush.extent([value, value]);
   }
-  handle.attr("x", x(value) - 9);
+  handle.attr("x", xScale(value) - 9);
   updateCurvature(value);
 }
 slider.call(brushed);
