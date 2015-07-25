@@ -5,14 +5,12 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <style>
-
 .axis {
   font: 10px sans-serif;
   -webkit-user-select: none;
   -moz-user-select: none;
   user-select: none;
 }
-
 .axis .domain {
   fill: none;
   stroke: #000;
@@ -20,14 +18,12 @@
   stroke-width: 10px;
   stroke-linecap: round;
 }
-
 .axis .halo {
   fill: none;
   stroke: #ddd;
   stroke-width: 8px;
   stroke-linecap: round;
 }
-
 .slider .handle {
   fill: #fff;
   stroke: #000;
@@ -35,7 +31,6 @@
   stroke-width: 1.25px;
   cursor: crosshair;
 }
-
 </style>
 <body>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
@@ -52,21 +47,19 @@ var x = d3.scale.linear()
     .domain([0, 180])
     .range([0, width])
     .clamp(true);
-
-var jsonCircles = [
-  { "x_axis": 30, "y_axis": 30, "radius": 20, "color" : "green" },];
-
+var jsonCircles = [{ "x_axis": 30,
+                     "y_axis": 30,
+                     "radius": 20,
+                     "color" : "green" },];
 var brush = d3.svg.brush()
     .x(x)
     .extent([0, 0])
     .on("brush", brushed);
-
 var svg = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
 svg.append("g")
     .attr("class", "x axis")
     .attr("transform", "translate(0," + height / 2 + ")")
@@ -79,7 +72,6 @@ svg.append("g")
   .select(".domain")
   .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
     .attr("class", "halo");
-
 var circle = svg.selectAll("circle")
                          .data(jsonCircles)
                          .enter()
@@ -89,18 +81,13 @@ var circleAttributes = circle
                       .attr("cy", function (d) { return d.y_axis; })
                       .attr("r", function (d) { return d.radius; })
                       .style("fill", function(d) { return d.color; });
-
-
 var slider = svg.append("g")
     .attr("class", "slider")
     .call(brush);
-
 slider.selectAll(".extent,.resize")
     .remove();
-
 slider.select(".background")
     .attr("height", height);
-
 var handle = slider.append("rect")
     .attr("class", "handle")
     .attr("transform", "translate(0," + height / 2 + ")")
@@ -108,9 +95,7 @@ var handle = slider.append("rect")
     .attr("x", 0)
     .attr("width", 18)
     .attr("height", 18);
-
 slider.call(brush.event);
-
 function brushed() {
   var value = brush.extent()[0];
   if (d3.event.sourceEvent) { // not a programmatic event
@@ -120,5 +105,4 @@ function brushed() {
   handle.attr("x", x(value));
   d3.select("body").style("background-color", d3.hsl(value, .8, .8));
 }
-
 </script>
