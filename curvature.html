@@ -34,14 +34,20 @@
 </style>
 <body>
 <script src="d3/d3.v3.min.js"></script>
-<p>based on an example from <a href="http://bl.ocks.org/mbostock/6452972">http://bl.ocks.org/mbostock/6452972</a></p>
+<table>
+  <tr><td><div id="sliderAnc"/></td></tr>
+  <tr><td><div id="pAnc"/></td><td><div id="bootAnc"/></td></tr>
+</table>
+<p>based on an example from <a href="http://bl.ocks.org/mbostock/6452972">http://bl.ocks.org/mbostock/6452972</a>
+</p>
+</body>
 <script>
 var margin = {
-  top: 50,
+  top: 150,
   right: 50,
   bottom: 200,
   left: 50};
-var width = 960 - margin.left - margin.right;
+var width = 480 - margin.left - margin.right;
 var halfWidth = width/2;
 var height = 400 - margin.bottom - margin.top;
 var xScale = d3.scale.linear()
@@ -58,7 +64,29 @@ var brush = d3.svg.brush()
     .extent([0, 0])
     .on("brush", brushed);
 
-var svg = d3.select("body").append("svg")
+var sliderSVGHeight = 20;
+var sliderSVGWidth = 2*width;
+
+var sliderSvg = d3.select('#sliderAnc').append("svg")
+    .attr("width", sliderSVGWidth + margin.left + margin.right)
+    .attr("height", sliderSVGHeight)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + 0 + ")");
+sliderSvg.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + sliderSVGHeight / 2 + ")")
+    .call(d3.svg.axis()
+      .scale(xScale)
+      .orient("bottom")
+      .tickSize(0)
+      .tickPadding(12))
+  .select(".domain")
+  .select(function() {
+      return this.parentNode.appendChild(this.cloneNode(true));
+  })
+    .attr("class", "halo");
+
+var svg = d3.select('#pAnc').append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
   .append("g")
@@ -66,11 +94,6 @@ var svg = d3.select("body").append("svg")
 svg.append("g")
     .attr("class", "x axis")
     .attr("transform", "translate(0," + height / 2 + ")")
-    .call(d3.svg.axis()
-      .scale(xScale)
-      .orient("bottom")
-      .tickSize(0)
-      .tickPadding(12))
   .select(".domain")
   .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
     .attr("class", "halo");
@@ -79,7 +102,7 @@ var circle = svg.selectAll("circle")
                          .enter()
                          .append("circle");
 var nullpath = svg.append("path");
-var slider = svg.append("g")
+var slider = sliderSvg.append("g")
     .attr("class", "slider")
     .call(brush);
 slider.selectAll(".extent,.resize")
@@ -88,7 +111,7 @@ slider.select(".background")
     .attr("height", height);
 var handle = slider.append("rect")
     .attr("class", "handle")
-    .attr("transform", "translate(0," + height / 2 + ")")
+    .attr("transform", "translate(0," + sliderSVGHeight / 2 + ")")
     .attr("y", -9)
     .attr("x", 0)
     .attr("width", 18)
@@ -96,7 +119,7 @@ var handle = slider.append("rect")
 var nullCircle = jsonCircles[0];
 var lineFunction = d3.svg.line()
                         .x(function(d) { return xScale(d.x); })
-                        .y(function(d) { return -10 + (300)*(.5 + d.y); })
+                        .y(function(d) { return -100 + (300)*(.5 + d.y); })
                         .interpolate("basis-closed");
 var midPoint = {"x": -1, "y": 0};
 var upperLeft = {"x": -1, "y": -1};
