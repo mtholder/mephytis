@@ -8,13 +8,19 @@
 <body>
   <div class="simgroup">
       <div class="swprob">
-          <span class="col-sm-2">True color switch probability = </span>
+          <span>True color switch probability = </span>
           <span id="value-switch-prob"></span><br/>
           <span id="switch-prob-slider"></span>
       </div>
+      <div class="numobs">
+          <span># samples per button click: </span>
+          <br/>
+          <span id="num-obs-slider"></span>
+      </div>
       <div>
-          <span>Simulate:</span>&nbsp;&nbsp;&nbsp;<button class="simbtn">Draw next datum</button>
+          <span>Simulate:</span>
           &nbsp;&nbsp;&nbsp;<button class="clearbtn">Clear</button>
+          &nbsp;&nbsp;&nbsp;<button class="simbtn">Draw next <span display="inline-block" id="btn-num-obs"></span> sample(s)</button>
       </div>
       <div><span>Data:</span></div>
       <div class="drawcont"></div>
