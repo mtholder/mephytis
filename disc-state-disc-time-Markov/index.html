@@ -7,11 +7,13 @@
 </head>
 <body>
   <div class="simgroup">
+      <h3>Simulation:</h3>
       <div class="swprob">
           <span>True color switch probability = </span>
           <span id="value-switch-prob"></span><br/>
           <span id="switch-prob-slider"></span>
       </div>
+      <br/>
       <div class="numobs">
           <span># samples per button click: </span>
           <br/>
@@ -22,11 +24,30 @@
           &nbsp;&nbsp;&nbsp;<button class="clearbtn">Clear</button>
           &nbsp;&nbsp;&nbsp;<button class="simbtn">Draw next <span display="inline-block" id="btn-num-obs"></span> sample(s)</button>
       </div>
-      <div><span>Data:</span></div>
+      <div><span>Simulated data (<i>n = </i></span> <span id="samplesize">0</span>):</div>
       <div class="drawcont"></div>
   </div>
+  <div class="inference">
+      <h3>Summary stats:</h3>
+      <div># observed transitions = <span id="value-ntransitions">0</span>.</div>
+      <div><i>d = </i><span id="value-ndiffs">0</span> (number of color changes)</div>
+      <div><i>s = </i><span id="value-nsame">0</span> (# adjacent samples with same color)</div>
+      <div>Estimate of the switch probability:</div>
+      <div><i>ŝ = </i><span id="value-estimate-of-s">?</span></div>
+      <h3>Likelihood</h3>
+      <div id="likelihood-trace-div"></div>
+  </div>
+
     <script src="../d3/d3.v5.min.js"></script>
     <script src="../d3-simple-slider/d3-simple-slider.js"></script>
     <script src="dsdtmarkov.js"></script>
 </body>
+
+
+<div class="footer">
+    <h4></h4>
+    <p>Back to the demo <a href="../index.html">table of contents...</a></p>
+    <p> Source code at <a href="https://github.com/mtholder/mephytis">https://github.com/mtholder/mephytis</a></p>
+
+</div>
 </html>
