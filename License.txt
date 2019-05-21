@@ -11,6 +11,7 @@ Code by others
 ==============
 Inspiration for some of the code was from http://mbostock.github.io/d3/tutorial/circle.html
 
+See License info in jquery, d3, d3-simple-slider subdirectories
 
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

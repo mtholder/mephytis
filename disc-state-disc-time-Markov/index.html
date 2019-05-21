@@ -7,6 +7,11 @@
 </head>
 <body>
   <div class="simgroup">
+      <div class="swprob">
+          <span class="col-sm-2">True color switch probability = </span>
+          <span id="value-switch-prob"></span><br/>
+          <span id="switch-prob-slider"></span>
+      </div>
       <div>
           <span>Simulate:</span>&nbsp;&nbsp;&nbsp;<button class="simbtn">Draw next datum</button>
           &nbsp;&nbsp;&nbsp;<button class="clearbtn">Clear</button>
@@ -15,6 +20,7 @@
       <div class="drawcont"></div>
   </div>
     <script src="../d3/d3.v5.min.js"></script>
+    <script src="../d3-simple-slider/d3-simple-slider.js"></script>
     <script src="dsdtmarkov.js"></script>
 </body>
 </html>
