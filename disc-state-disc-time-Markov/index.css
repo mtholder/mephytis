@@ -1,0 +1,23 @@
+html {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+}
+
+.simbtn {
+    background-color: aqua;
+    color: black;
+}
+
+.clearbtn {
+    background-color: lightpink;
+}
+
+.block {
+    display:inline-block;
+    text-align: center;
+}
