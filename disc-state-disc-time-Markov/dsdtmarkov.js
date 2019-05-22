@@ -163,20 +163,35 @@ var ln_like_linear_scale_y = d3.scaleLinear()
     .range([like_height - like_margin.bottom, like_margin.top]);
 var y_scaler, line_func;
 
+var s_scaler = function(d) {return like_x(d.s);};
+var l_scaler = function(d) {return like_y(d.likelihood);};
+var lnl_scaler = function(d) {return ln_like_linear_scale_y(d.ln_likelihood);}
 var like_line_f = d3.line()
-            .x(function(d) {return like_x(d.s);})
-            .y(function(d) {return like_y(d.likelihood);});
+            .x(s_scaler)
+            .y(l_scaler);
 var ln_like_line_f = d3.line()
-            .x(function(d) {return like_x(d.s);})
-            .y(function(d) {return ln_like_linear_scale_y(d.ln_likelihood);});
+            .x(s_scaler)
+            .y(lnl_scaler);
+
+var like_shading = d3.area()
+    .x(s_scaler)
+    .y0(like_height - like_margin.bottom)
+    .y1(l_scaler);
+var ln_like_shading = d3.area()
+    .x(s_scaler)
+    .y0(like_height)
+    .y1(lnl_scaler);
+var shading_func;
 
 var set_scaling = function() {
     if (using_ln_scale) {
         y_scaler = ln_like_linear_scale_y;
         line_func = ln_like_line_f;
+        shading_func = ln_like_shading
     } else {
         y_scaler = like_y;
         line_func = like_line_f;
+        shading_func = like_shading;
     }
 };
 
@@ -266,6 +281,29 @@ var create_like_plot_points = function(sum_stats) {
     return like_points;
 };
 
+var crop_to_points_in_ci = function(points, max_ln_l, ln_l_diff) {
+    var cutoff;
+    if (using_ln_scale) {
+        cutoff = max_ln_l - ln_l_diff;
+    } else {
+        cutoff = max_ln_l/Math.exp(ln_l_diff);
+    }
+    var filtered = [];
+    var curr_score;
+    var el, i;
+    for (i = 0 ; i < points.length; ++i) {
+        el = points[i];
+        if (using_ln_scale) {
+            curr_score = el.ln_likelihood;
+        } else {
+            curr_score = el.likelihood;
+        }
+        if (curr_score >= cutoff) {
+            filtered.push(el);
+        }
+    }
+    return filtered;
+};
 
 var update_likelihood_plots = function(sum_stats){
     var lp = create_like_plot_points(sum_stats);
@@ -282,18 +320,28 @@ var update_likelihood_plots = function(sum_stats){
         ydmax = d3.max(lp, function (d) {return d.likelihood;});
         ydmin = min_y_for_scaling;
     }
+    var alp = crop_to_points_in_ci(lp, ydmax, 1.92);
     y_scaler.domain([ydmin, ydmax]);
     like_svg.transition();
     var moving = like_svg.transition();
     moving.select(".line")
-        .duration(750)
+        .duration(500)
         .attr("d", line_func(lp));
+    moving.select(".area")
+        .duration(500)
+        .attr("d", shading_func(alp));
     moving.select(".y.axis")
-        .duration(750)
+        .duration(500)
         .call(like_y_axis);
 };
 var like_points = create_like_plot_points({"nd":0, "ns":0, "n":0});
 var darr = like_line_f(like_points);
+var darea_arr = shading_func(like_points);
+like_svg.append("path")
+       .data(like_points)
+       .attr("class", "area")
+       .attr("d", darea_arr);
+
 like_svg.append("path")
     .attr("fill", "none")
     .attr("stroke", "black")

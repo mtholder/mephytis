@@ -34,3 +34,7 @@ button {
 table {
     text-align:right;
 }
+
+.area {
+  fill: lightsteelblue;
+}
