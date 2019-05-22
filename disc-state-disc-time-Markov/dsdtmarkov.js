@@ -160,6 +160,7 @@ var like_y_axis = function(el) {
     el.attr("transform", "translate(" + like_margin.left + ", 0)")
         .call(d3.axisLeft(like_y).ticks(10).tickSizeOuter(0));
 };
+
 var like_svg = d3.select("#likelihood-trace-div")
     .append("svg")
         .attr("id", "likeplot")
@@ -220,11 +221,15 @@ var create_like_plot_points = function(sum_stats) {
 
 var update_likelihood_plots = function(sum_stats){
     var lp = create_like_plot_points(sum_stats);
+    like_y.domain([0, d3.max(lp, function (d) {return d.likelihood;})]);
     like_svg.transition();
     var moving = like_svg.transition();
     moving.select(".line")
         .duration(750)
         .attr("d", like_line_f(lp));
+    moving.select(".y.axis")
+        .duration(750)
+        .call(like_y_axis);
 };
 var like_points = create_like_plot_points({"nd":0, "ns":0, "n":0});
 var darr = like_line_f(like_points);
@@ -237,6 +242,8 @@ like_svg.append("path")
     .attr("class", "line")
     .attr("d", darr);
 like_svg.append("g").call(like_x_axis);
-like_svg.append("g").call(like_y_axis);
+like_svg.append("g")
+    .attr("class", "y axis")
+    .call(like_y_axis);
 
 
