@@ -17,7 +17,7 @@ body {
     font-family: "Arial";
 }
 
-.simbtn {
+button {
     background-color: aqua;
     color: black;
 }
@@ -31,6 +31,6 @@ body {
     text-align: center;
 }
 
-.table {
+table {
     text-align:right;
 }

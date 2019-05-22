@@ -94,6 +94,8 @@ d3.select(".simbtn")
     .attr("onclick", "draw_next_bead(switch_prob)");
 d3.select(".clearbtn")
     .attr("onclick", "clear_data()");
+d3.select("#logtransform")
+    .attr("onclick", "toggle_scaling()");
 
 var update_inference = function(data) {
     var sum_stats = update_summary_stats(data);
@@ -153,18 +155,58 @@ var like_x = d3.scaleLinear()
 var like_y = d3.scaleLinear()
         .domain([0.0, 1.00001])
         .range([like_height - like_margin.bottom, like_margin.top]);
-var ln_like_y = d3.scaleLog()
+var ln_like_ln_scale_y = d3.scaleLog()
     .domain([1e-6, 1.00001])
     .range([like_height - like_margin.bottom, like_margin.top]);
-like_y = ln_like_y;
+var ln_like_linear_scale_y = d3.scaleLinear()
+    .domain([Math.log(1e-6), 0.00001])
+    .range([like_height - like_margin.bottom, like_margin.top]);
+var y_scaler, line_func;
+
+var like_line_f = d3.line()
+            .x(function(d) {return like_x(d.s);})
+            .y(function(d) {return like_y(d.likelihood);});
+var ln_like_line_f = d3.line()
+            .x(function(d) {return like_x(d.s);})
+            .y(function(d) {return ln_like_linear_scale_y(d.ln_likelihood);});
+
+var set_scaling = function() {
+    if (using_ln_scale) {
+        y_scaler = ln_like_linear_scale_y;
+        line_func = ln_like_line_f;
+    } else {
+        y_scaler = like_y;
+        line_func = like_line_f;
+    }
+};
+
+set_scaling();
+
+var toggle_scaling = function() {
+    var title_element = d3.select("#tracetitle");
+    var button_element = d3.select("#logtransform");
+    if (using_ln_scale) {
+        button_element.text("Move to log scale");
+        title_element.text("Likelihood");
+    } else {
+        button_element.text("Move to probability scale");
+        title_element.text("Ln Likelihood");
+    }
+    using_ln_scale = ! using_ln_scale;
+    set_scaling();
+    update_inference(global_draws);
+
+};
+
 var xapos = like_height - like_margin.bottom;
 var like_x_axis = function(el) {
     el.attr("transform", "translate(0, " + xapos + ")")
         .call(d3.axisBottom(like_x).ticks(10).tickSizeOuter(0));
 };
+
 var like_y_axis = function(el) {
     el.attr("transform", "translate(" + like_margin.left + ", 0)")
-        .call(d3.axisLeft(like_y).ticks(10).tickSizeOuter(0));
+        .call(d3.axisLeft(y_scaler).ticks(10).tickSizeOuter(0));
 };
 
 var like_svg = d3.select("#likelihood-trace-div")
@@ -172,12 +214,7 @@ var like_svg = d3.select("#likelihood-trace-div")
         .attr("id", "likeplot")
         .attr("width", like_width)
         .attr("height", like_height);
-//    .append("g")
-//        .attr("transform",
-//              "translate(" + like_margin.left + "," + like_margin.top + ")");
-var like_line_f = d3.line()
-            .x(function(d) {return like_x(d.s);})
-            .y(function(d) {return like_y(d.likelihood);});
+
 
 var calc_like = function(sum_stats, switch_bin_prob) {
     var nti = sum_stats.nd + sum_stats.ns;
@@ -198,9 +235,9 @@ var calc_ln_like = function(sum_stats, switch_bin_prob) {
     var nti = nd + ns;
     if (nti == 0) {
         if (sum_stats.n == 0) {
-            return 1.0;
+            return 0.0;
         }
-        return 0.25;
+        return Math.log(0.25);
     }
     var third_of_switch = switch_bin_prob/3.0;
     var nonswitch = 1.0 - switch_bin_prob;
@@ -232,19 +269,25 @@ var create_like_plot_points = function(sum_stats) {
 
 var update_likelihood_plots = function(sum_stats){
     var lp = create_like_plot_points(sum_stats);
-    var ydmin;
-    var ydmax = d3.max(lp, function (d) {return d.likelihood;});
+    var ydmin, ydmax;
     if (using_ln_scale) {
-        ydmin = ydmax/1e6;
+        if (like_line_f == line_func) {
+            ydmax = d3.max(lp, function (d) {return d.likelihood;});
+            ydmin = ydmax/1e6;
+        } else {
+            ydmax = d3.max(lp, function (d) {return d.ln_likelihood;});
+            ydmin = ydmax - 12;
+        }
     } else {
+        ydmax = d3.max(lp, function (d) {return d.likelihood;});
         ydmin = min_y_for_scaling;
     }
-    like_y.domain([ydmin, ydmax]);
+    y_scaler.domain([ydmin, ydmax]);
     like_svg.transition();
     var moving = like_svg.transition();
     moving.select(".line")
         .duration(750)
-        .attr("d", like_line_f(lp));
+        .attr("d", line_func(lp));
     moving.select(".y.axis")
         .duration(750)
         .call(like_y_axis);
@@ -264,4 +307,10 @@ like_svg.append("g")
     .attr("class", "y axis")
     .call(like_y_axis);
 
-
+like_svg.append("text")
+      .attr("transform",
+            "translate(" + (like_width/2) + " ," +
+                           (xapos + 25) + ")")
+      .style("text-anchor", "middle")
+      .style("font-style", "italic")
+      .text("s");
