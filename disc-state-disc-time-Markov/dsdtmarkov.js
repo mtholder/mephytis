@@ -82,17 +82,22 @@ var draw_next_bead = function(sprob) {
         }
     }
     update_data_boxes(global_draws);
-    update_summary_stats(global_draws);
+    update_inference(global_draws);
 };
 var clear_data = function() {
     global_draws = [];
     update_data_boxes(global_draws);
-    update_summary_stats(global_draws);
+    update_inference(global_draws);
 };
 d3.select(".simbtn")
     .attr("onclick", "draw_next_bead(switch_prob)");
 d3.select(".clearbtn")
     .attr("onclick", "clear_data()");
+
+var update_inference = function(data) {
+    var sum_stats = update_summary_stats(data);
+    update_likelihood_plots(sum_stats);
+};
 
 var update_summary_stats = function(data) {
     var ns = 0;
@@ -117,7 +122,7 @@ var update_summary_stats = function(data) {
         g_s_hat = nd/(nd + ns);
         d3.select("#value-estimate-of-s").text(d3.format(".3f")(g_s_hat));
     }
-
+    return {"nd": nd, "ns": ns};
 };
 
 var update_data_boxes = function (data) {
@@ -139,13 +144,13 @@ var update_data_boxes = function (data) {
 
 var like_width = 500;
 var like_height = 400;
-var like_margin = ({top: 20, right: 30, bottom: 30, left: 50});
+var like_margin = {top: 20, right: 30, bottom: 30, left: 50};
 var like_x = d3.scaleLinear()
-        .domain([0.0, 1.0])
+        .domain([0.0, 1.00001])
         .range([like_margin.left, like_width - like_margin.right]);
 var like_y = d3.scaleLinear()
-        .domain([1.0, 0.0])
-        .range([like_margin.top, like_height - like_margin.bottom]);
+        .domain([0.0, 1.00001])
+        .range([like_height - like_margin.bottom, like_margin.top]);
 var xapos = like_height - like_margin.bottom;
 var like_x_axis = function(el) {
     el.attr("transform", "translate(0, " + xapos + ")")
@@ -156,11 +161,16 @@ var like_y_axis = function(el) {
         .call(d3.axisLeft(like_y).ticks(10).tickSizeOuter(0));
 };
 var like_svg = d3.select("#likelihood-trace-div")
-    .attr("width", like_width)
-    .attr("height", like_height);
-like_svg.append("g").call(like_x_axis);
-like_svg.append("g").call(like_y_axis);
-
+    .append("svg")
+        .attr("id", "likeplot")
+        .attr("width", like_width)
+        .attr("height", like_height);
+//    .append("g")
+//        .attr("transform",
+//              "translate(" + like_margin.left + "," + like_margin.top + ")");
+var like_line_f = d3.line()
+            .x(function(d) {return like_x(d.s);})
+            .y(function(d) {return like_y(d.likelihood);});
 /*
 
   svg.append("g")
@@ -181,3 +191,41 @@ like_svg.append("g").call(like_y_axis);
   return svg.node();
 }
 */
+var calc_like = function(sum_stats, switch_prob) {
+    return 0.25;
+};
+
+var create_like_plot_points = function(sum_stats) {
+    var nti = sum_stats.nd + sum_stats.ns;
+    var num_points = 101;
+    var step_size = 1.0/(num_points - 1);
+    var like_points = [];
+    var lval = 1.0;
+    if (nti < 2) {
+
+    }
+    var cur_s = 0.0;
+    var i;
+    for (i = 0; i < num_points; ++i) {
+        like_points.push({"s": cur_s,
+                          "likelihood": lval});
+        cur_s = cur_s + step_size;
+    }
+    return like_points;
+};
+
+
+var like_points = create_like_plot_points({"nd":0, "ns":0 });
+var darr = like_line_f(like_points);
+like_svg.append("path")
+    .attr("fill", "none")
+    .attr("stroke", "black")
+    .attr("stroke-width", 1.5)
+    .attr("stroke-linejoin", "round")
+    .attr("stroke-linecap", "round")
+    .attr("class", "line")
+    .attr("d", darr);
+like_svg.append("g").call(like_x_axis);
+like_svg.append("g").call(like_y_axis);
+
+
