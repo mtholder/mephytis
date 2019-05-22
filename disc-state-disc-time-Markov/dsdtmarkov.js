@@ -191,30 +191,39 @@ var like_line_f = d3.line()
   return svg.node();
 }
 */
-var calc_like = function(sum_stats, switch_prob) {
-    return 0.25;
+var calc_like = function(sum_stats, switch_bin_prob) {
+    var nti = sum_stats.nd + sum_stats.ns;
+    if (nti == 0) {
+        return 1.0;
+    }
+    if (nti == 1) {
+        return 0.25;
+    }
+    return 1.0;
 };
 
 var create_like_plot_points = function(sum_stats) {
-    var nti = sum_stats.nd + sum_stats.ns;
     var num_points = 101;
     var step_size = 1.0/(num_points - 1);
     var like_points = [];
-    var lval = 1.0;
-    if (nti < 2) {
-
-    }
     var cur_s = 0.0;
     var i;
     for (i = 0; i < num_points; ++i) {
         like_points.push({"s": cur_s,
-                          "likelihood": lval});
+                          "likelihood": calc_like(sum_stats, switch_prob)});
         cur_s = cur_s + step_size;
     }
     return like_points;
 };
 
-
+var update_likelihood_plots = function(sum_stats){
+    var lp = create_like_plot_points(sum_stats);
+    like_svg.transition();
+    var moving = like_svg.transition();
+    moving.select(".line")
+        .duration(750)
+        .attr("d", like_line_f(lp));
+};
 var like_points = create_like_plot_points({"nd":0, "ns":0 });
 var darr = like_line_f(like_points);
 like_svg.append("path")
