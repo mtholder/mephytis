@@ -136,6 +136,7 @@ var update_data_boxes = function (data) {
         .remove();
 };
 
+
 var like_width = 500;
 var like_height = 400;
 
@@ -143,15 +144,23 @@ var like_margin = ({top: 20, right: 30, bottom: 30, left: 50});
 var like_x = d3.scaleLinear()
         .domain([0.0, 1.0])
         .range([like_margin.left, like_width - like_margin.right]);
+var like_y = d3.scaleLinear()
+        .domain([0.0, 1.0])
+        .range([like_margin.top, like_height - like_margin.bottom]);
+var xapos = like_height - like_margin.bottom;
 var like_x_axis = function(el) {
-    el.attr("transform", "translate(0, " + like_height - like_margin.bottom + ")")
+    el.attr("transform", "translate(0, " + xapos + ")")
         .call(d3.axisBottom(like_x).ticks(10).tickSizeOuter(0));
 };
+var like_y_axis = function(el) {
+    el.attr("transform", "translate(" + like_margin.left + ", 0)")
+        .call(d3.axisLeft(like_y).ticks(10).tickSizeOuter(0));
+};
 var like_svg = d3.select("#likelihood-trace-div")
-    .append("svg")
     .attr("width", like_width)
     .attr("height", like_height);
 like_svg.append("g").call(like_x_axis);
+like_svg.append("g").call(like_y_axis);
 
 /*
 
