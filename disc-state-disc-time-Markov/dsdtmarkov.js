@@ -122,7 +122,7 @@ var update_summary_stats = function(data) {
         g_s_hat = nd/(nd + ns);
         d3.select("#value-estimate-of-s").text(d3.format(".3f")(g_s_hat));
     }
-    return {"nd": nd, "ns": ns};
+    return {"nd": nd, "ns": ns, "n": data.length};
 };
 
 var update_data_boxes = function (data) {
@@ -194,12 +194,14 @@ var like_line_f = d3.line()
 var calc_like = function(sum_stats, switch_bin_prob) {
     var nti = sum_stats.nd + sum_stats.ns;
     if (nti == 0) {
-        return 1.0;
-    }
-    if (nti == 1) {
+        if (sum_stats.n == 0) {
+            return 1.0;
+        }
         return 0.25;
     }
-    return 1.0;
+    var third_of_switch = switch_bin_prob/3.0;
+    var nonswitch = 1.0 - switch_bin_prob;
+    return 0.25*Math.pow(third_of_switch, sum_stats.nd)*Math.pow(nonswitch, sum_stats.ns);
 };
 
 var create_like_plot_points = function(sum_stats) {
@@ -210,7 +212,7 @@ var create_like_plot_points = function(sum_stats) {
     var i;
     for (i = 0; i < num_points; ++i) {
         like_points.push({"s": cur_s,
-                          "likelihood": calc_like(sum_stats, switch_prob)});
+                          "likelihood": calc_like(sum_stats, cur_s)});
         cur_s = cur_s + step_size;
     }
     return like_points;
@@ -224,7 +226,7 @@ var update_likelihood_plots = function(sum_stats){
         .duration(750)
         .attr("d", like_line_f(lp));
 };
-var like_points = create_like_plot_points({"nd":0, "ns":0 });
+var like_points = create_like_plot_points({"nd":0, "ns":0, "n":0});
 var darr = like_line_f(like_points);
 like_svg.append("path")
     .attr("fill", "none")
