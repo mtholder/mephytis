@@ -7,6 +7,7 @@ var num_urns = draw_text.length;
 var switch_prob = 7.0/16.0;
 var num_samples_per_click = 1;
 var g_s_hat = '?';
+var using_ln_scale = true;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // slider code from https://bl.ocks.org/johnwalley/e1d256b81e51da68f7feb632a53c3518
@@ -142,15 +143,20 @@ var update_data_boxes = function (data) {
 };
 
 
-var like_width = 500;
+var like_width = 520;
 var like_height = 400;
-var like_margin = {top: 20, right: 30, bottom: 30, left: 50};
+var like_margin = {top: 20, right: 30, bottom: 30, left: 70};
+var min_y_for_scaling = 0;
 var like_x = d3.scaleLinear()
         .domain([0.0, 1.00001])
         .range([like_margin.left, like_width - like_margin.right]);
 var like_y = d3.scaleLinear()
         .domain([0.0, 1.00001])
         .range([like_height - like_margin.bottom, like_margin.top]);
+var ln_like_y = d3.scaleLog()
+    .domain([1e-6, 1.00001])
+    .range([like_height - like_margin.bottom, like_margin.top]);
+like_y = ln_like_y;
 var xapos = like_height - like_margin.bottom;
 var like_x_axis = function(el) {
     el.attr("transform", "translate(0, " + xapos + ")")
@@ -172,26 +178,7 @@ var like_svg = d3.select("#likelihood-trace-div")
 var like_line_f = d3.line()
             .x(function(d) {return like_x(d.s);})
             .y(function(d) {return like_y(d.likelihood);});
-/*
 
-  svg.append("g")
-      .call(xAxis);
-
-  svg.append("g")
-      .call(yAxis);
-
-  svg.append("path")
-      .datum(data)
-      .attr("fill", "none")
-      .attr("stroke", "steelblue")
-      .attr("stroke-width", 1.5)
-      .attr("stroke-linejoin", "round")
-      .attr("stroke-linecap", "round")
-      .attr("d", line);
-
-  return svg.node();
-}
-*/
 var calc_like = function(sum_stats, switch_bin_prob) {
     var nti = sum_stats.nd + sum_stats.ns;
     if (nti == 0) {
@@ -205,6 +192,21 @@ var calc_like = function(sum_stats, switch_bin_prob) {
     return 0.25*Math.pow(third_of_switch, sum_stats.nd)*Math.pow(nonswitch, sum_stats.ns);
 };
 
+var calc_ln_like = function(sum_stats, switch_bin_prob) {
+    var ns = sum_stats.ns;
+    var nd = sum_stats.nd;
+    var nti = nd + ns;
+    if (nti == 0) {
+        if (sum_stats.n == 0) {
+            return 1.0;
+        }
+        return 0.25;
+    }
+    var third_of_switch = switch_bin_prob/3.0;
+    var nonswitch = 1.0 - switch_bin_prob;
+    return Math.log(0.25) + nd*Math.log(third_of_switch) + ns*Math.log(nonswitch);
+};
+
 var create_like_plot_points = function(sum_stats) {
     var num_points = 501;
     var step_size = 1.0/(num_points - 1);
@@ -212,16 +214,32 @@ var create_like_plot_points = function(sum_stats) {
     var cur_s = 0.0;
     var i;
     for (i = 0; i < num_points; ++i) {
-        like_points.push({"s": cur_s,
-                          "likelihood": calc_like(sum_stats, cur_s)});
+        var lnl = calc_ln_like(sum_stats, cur_s);
+        if (isNaN(lnl)) {
+            console.log("Skipping s=" + cur_s + " which gave NaN for lnL\n");
+        } else if (lnl < -1e150) {
+            console.log("Skipping s=" + cur_s + " which gave -infinity lnL\n");
+        } else {
+            like_points.push({"s": cur_s,
+                              "likelihood": Math.exp(lnl),
+                              "ln_likelihood": lnl});
+        }
         cur_s = cur_s + step_size;
     }
     return like_points;
 };
 
+
 var update_likelihood_plots = function(sum_stats){
     var lp = create_like_plot_points(sum_stats);
-    like_y.domain([0, d3.max(lp, function (d) {return d.likelihood;})]);
+    var ydmin;
+    var ydmax = d3.max(lp, function (d) {return d.likelihood;});
+    if (using_ln_scale) {
+        ydmin = ydmax/1e6;
+    } else {
+        ydmin = min_y_for_scaling;
+    }
+    like_y.domain([ydmin, ydmax]);
     like_svg.transition();
     var moving = like_svg.transition();
     moving.select(".line")
