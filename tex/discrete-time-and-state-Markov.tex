@@ -29,10 +29,18 @@
 \hypersetup{backref,   linkcolor=blue, citecolor=red, colorlinks=true, hyperindex=true}
 \begin{document}
 \section*{Markov chains over a discrete state space acting in discrete time steps}
-
+\subsection*{Usage}
 This document provides background and derivations for the demo at
     \url{http://phylo.bio.ku.edu/mephytis/disc-state-disc-time-Markov/index.html}
     \footnote{source code at \url{https://github.com/mtholder/mephytis}}.
+
+The widget lets you control the probability of switching states ($s$ in the notes below) and
+    the number of observations to add every time that you click on the blue button.
+
+You can then generate a series of observations and note how the likelihood estimate $\hat{s}$
+    tends to approach the true value of $s$ you used in your simulation as you add more data.
+
+\subsection*{Background}
 
 The set of possible values that at stochastic process can visit is the ``state space'' of the model.
 So a model of DNA evolution would have 4 states: $\mathcal{S} = \{A, C, G, T\}$.
