@@ -206,7 +206,7 @@ var calc_like = function(sum_stats, switch_bin_prob) {
 };
 
 var create_like_plot_points = function(sum_stats) {
-    var num_points = 101;
+    var num_points = 501;
     var step_size = 1.0/(num_points - 1);
     var like_points = [];
     var cur_s = 0.0;
