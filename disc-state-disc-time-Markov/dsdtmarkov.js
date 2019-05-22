@@ -323,15 +323,16 @@ var update_likelihood_plots = function(sum_stats){
     var alp = crop_to_points_in_ci(lp, ydmax, 1.92);
     y_scaler.domain([ydmin, ydmax]);
     like_svg.transition();
+    var transition_time = 400;
     var moving = like_svg.transition();
     moving.select(".line")
-        .duration(500)
+        .duration(transition_time)
         .attr("d", line_func(lp));
     moving.select(".area")
-        .duration(500)
+        .duration(transition_time)
         .attr("d", shading_func(alp));
     moving.select(".y.axis")
-        .duration(500)
+        .duration(transition_time)
         .call(like_y_axis);
 };
 var like_points = create_like_plot_points({"nd":0, "ns":0, "n":0});
