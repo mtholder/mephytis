@@ -30,3 +30,7 @@ body {
     display:inline-block;
     text-align: center;
 }
+
+.table {
+    text-align:right;
+}

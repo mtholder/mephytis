@@ -139,13 +139,12 @@ var update_data_boxes = function (data) {
 
 var like_width = 500;
 var like_height = 400;
-
 var like_margin = ({top: 20, right: 30, bottom: 30, left: 50});
 var like_x = d3.scaleLinear()
         .domain([0.0, 1.0])
         .range([like_margin.left, like_width - like_margin.right]);
 var like_y = d3.scaleLinear()
-        .domain([0.0, 1.0])
+        .domain([1.0, 0.0])
         .range([like_margin.top, like_height - like_margin.bottom]);
 var xapos = like_height - like_margin.bottom;
 var like_x_axis = function(el) {

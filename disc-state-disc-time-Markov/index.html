@@ -28,12 +28,21 @@
       <div class="drawcont"></div>
   </div>
   <div class="inference">
-      <h3>Summary stats:</h3>
-      <div># observed transitions = <span id="value-ntransitions">0</span>.</div>
-      <div><i>d = </i><span id="value-ndiffs">0</span> (number of color changes)</div>
-      <div><i>s = </i><span id="value-nsame">0</span> (# adjacent samples with same color)</div>
-      <div>Estimate of the switch probability:</div>
-      <div><i>ŝ = </i><span id="value-estimate-of-s">?</span></div>
+      <h3>Inferential stats:</h3>
+      <table>
+          <tr><td><i>n - 1 = </i><span id="value-ntransitions">0</span></td>
+              <td><div># observed transitions</div></td>
+          </tr>
+          <tr><td><i>d = </i><span id="value-ndiffs">0</span></td>
+              <td>number of color changes</td>
+          </tr>
+          <tr><td><i>s = </i><span id="value-nsame">0</span></td>
+              <td># adjacent samples with same color</td>
+          </tr>
+          <tr><td><i>ŝ = </i><span id="value-estimate-of-s">?</span></td>
+              <td>Estimate of the switch probability</td>
+          </tr>
+      </table>
       <h3>Likelihood</h3>
       <div><svg id="likelihood-trace-div"></svg></div>
   </div>
