@@ -108,15 +108,18 @@
       <div>Enter starting data for urns:
         <label><button class="btnManualBead" onclick="manual_entry(1, 0)" style="background-color: #ffa500;color: #000000"></button><sub>+</sub></label>
         <label><button class="btnManualBead" onclick="manual_entry(1, 1)" style="background-color: #006400;color: #FFFFFF"></button><sub>+</sub></label>
-        <label><button class="btnManualBead" onclick="manual_entry(1, 2)"style="background-color: #AAAAAA;color: #FFFFFF" ></button><sub>-</sub></label>
+        <label><button class="btnManualBead" onclick="manual_entry(1, -1)"style="background-color: #AAAAAA;color: #FFFFFF" ></button><sub>-</sub></label>
       </div>
       <div id="manualbeads"></div><br/>
       <button onclick="process_starting()" class="simpleButton">Process Starting Point</button>
+      <div id="errormessage" style="color: red"><br/></div>
       <div class="numobs">
-          <span># samples per button click: </span>
+          <span># samples/click: </span>
           <br/>
           <span id="num-obs-slider"></span>
       </div>
+      <div><span>Simulated data (<i>n = </i></span> <span id="samplesize">0</span>):</div>
+      <div class="drawcont"></div>
       <!--h3><div>
           <span>Simulate:</span>
           &nbsp;&nbsp;&nbsp;<button class="clearbtn">Clear</button>

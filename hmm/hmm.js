@@ -1,5 +1,5 @@
 var g_bead_draws = [];
-var g_bin_draws = [];
+var g_urn_draws = [];
 var draw_text = "RY";
 var draw_color = ["orange", "darkgreen"];
 var draw_text_color = ["black", "white"];
@@ -23,6 +23,7 @@ var bead_col_is_mutable = [true, true, true, true];
 var num_immutable_beads = 4;
 var num_mutable = 4;
 var g_n0in0=8, g_n1in0=0, g_n0in1=0, g_n1in1=8;
+var g_curr_urn = Math.floor(Math.random()*2);
 
 var changed_c = function() {
     g_true_c = parseInt(c_chooser.value);
@@ -35,6 +36,27 @@ var changed_c = function() {
             set_bead_activity(i, true);
         }
     }
+
+    clear_data();
+};
+
+var clear_data = function() {
+    g_bead_draws = [];
+    g_urn_draws = [];
+    update_data_boxes(g_bead_draws);
+};
+
+var update_data_boxes = function (data) {
+    d3.select("#samplesize").text(data.length);
+    var drawboxes = d3.select(".drawcont")
+            .selectAll("button")
+            .data(data);
+    drawboxes.enter()
+        .append("button")
+        .attr("class", function(d) {return "button" + d;})
+        .style("width", "10pt");
+    drawboxes.exit()
+        .remove();
 };
 
 var set_bead_activity = function(index, val) {
@@ -59,18 +81,44 @@ var set_bead_activity = function(index, val) {
     }
 };
 
+var process_starting = function() {
+    var starting_urns = document.getElementById("manualurns").childNodes;
+    var starting_beads = document.getElementById("manualbeads").childNodes;
+    if (starting_urns.length !== starting_beads.length) {
+        d3.select("#errormessage").text("The # of starting urns has to equal the # of starting beads!");
+        return;
+    }
+    d3.select("#errormessage").text("");
+    clear_data();
+    var i, curr_, urnclass_name;
+    for (i = 0; i < starting_urns.length; ++i) {
+        curr_ = starting_urns[i];
+        urnclass_name = curr_.getAttribute("class");
+        if (urnclass_name[urnclass_name.length - 1] == "0") {
+            g_urn_draws.push(0);
+        } else {
+            g_urn_draws.push(1);
+        }
+    }
+    for (i = 0; i < starting_beads.length; ++i) {
+        curr_ = starting_beads[i];
+        urnclass_name = curr_.getAttribute("class");
+        if (urnclass_name[urnclass_name.length - 1] == "0") {
+            g_bead_draws.push(0);
+        } else {
+            g_bead_draws.push(1);
+        }
+    }
+    update_data_boxes(g_bead_draws);
+};
+
 var manual_entry = function(urn_or_bead, val) {
     var classname, container, new_el, styling;
     if (urn_or_bead == 0) {
         container = document.getElementById("manualurns");
         if (val == 0 || val == 1) {
             new_el = document. createElement("button");
-            classname = "btnManualUrn";
-            if (val == 0) {
-                styling = "background-color: #ffa500;color: #000000";
-            } else {
-                styling = "background-color: #006400;color: #FFFFFF";
-            }
+            classname = "btnManualUrn" + val;
             new_el.setAttribute("class", classname);
             new_el.setAttribute("style", styling);
             new_el.textContent = "⚱";
@@ -90,10 +138,12 @@ var manual_entry = function(urn_or_bead, val) {
     } else {
         container.appendChild(new_el);
     }
+
+    clear_data();
 };
 var changed_s = function() {
     g_true_s = + s_chooser.value;
-    console.log("g_true_s =" + g_true_s);
+    clear_data();
 };
 
 var randomize_s = function() {
@@ -133,7 +183,7 @@ var rand_bead = async function(urn, bead) {
     }
     set_bead_color(urn, bead, bval);
     sel_bead.style.display = "inline";
-
+    clear_data();
 };
 
 var set_bead_color = function(urn, bead, bval) {
@@ -157,6 +207,7 @@ var changed_beads = function() {
     d3.select("#num1in0").text(g_n1in0);
     d3.select("#num0in1").text(g_n0in1);
     d3.select("#num1in1").text(g_n1in1);
+    clear_data();
 };
 
 $(document).ready(function() {

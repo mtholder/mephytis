@@ -50,6 +50,28 @@ table, th, td {
     border-radius: 30%;
 }
 
+.btnManualUrn0 {
+    border: none;
+    padding: 3px;
+    display: inline-block;
+    font-size: 16px;
+    margin: 3px 1px;
+    border-radius: 30%;
+    background-color: #ffa500;
+    color: #000000;
+}
+
+.btnManualUrn1 {
+    border: none;
+    padding: 3px;
+    display: inline-block;
+    font-size: 16px;
+    margin: 3px 1px;
+    border-radius: 30%;
+    background-color: #006400;
+    color: #FFFFFF;
+}
+
 .btnManualBead {
     border: none;
     padding: 10px;
