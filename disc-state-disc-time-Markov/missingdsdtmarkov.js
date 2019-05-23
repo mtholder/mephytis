@@ -162,8 +162,9 @@ var update_summary_stats = function(data) {
     var i;
     var consec_num_missing = 0;
     var prev_non_missing = null;
+    _pad_ss_arr(ss_arr, 0);
     if (data.length == 0) {
-        _pad_ss_arr(ss_arr, 0);
+        // pass
     } else if (data.length > 0 && data[0] == MISSING_CODE) {
         consec_num_missing = 1;
     } else {
@@ -176,7 +177,7 @@ var update_summary_stats = function(data) {
             if (data[i - 1] == MISSING_CODE) {
                 if (prev_non_missing === null) {
                     // no op
-                } else if (data[i] == data[i - 1]) {
+                } else if (data[i] == prev_non_missing) {
                     add_non_change(ss_arr, consec_num_missing);
                 } else {
                     add_change(ss_arr, consec_num_missing);
@@ -337,26 +338,84 @@ var calc_ln_like = function(sum_stats, switch_bin_prob) {
     return Math.log(0.25) + nd*Math.log(third_of_switch) + ns*Math.log(nonswitch);
 };
 
+// forward algorithm with prob=1 for emitted states
+var create_forward_prob_table = function(len, s) {
+    var prev = [1.0, 0.0, 0.0, 0.0];
+    var fpt = [];
+    var i, j, k;
+    var oms = 1.0 - s;
+    var ots = s/(num_urns - 1.0);
+    for (i = 0; i < len; ++i) {
+        var next = [];
+        for (j = 0; j < num_urns; ++j) {
+            var tmp = 0.0;
+            for (k = 0; k < num_urns; ++k) {
+                if (k == j) {
+                    tmp += prev[k]*oms;
+                } else {
+                    tmp += prev[k]*ots;
+                }
+            }
+            next[j] = tmp;
+        }
+        fpt[i] = next;
+        prev = next;
+    }
+    return fpt;
+};
+
+var calc_missing_data_ln_like = function(sum_stats, forward_prob_table){
+    var i, el;
+    var ln_l = 0;
+    for (i = 1; i < sum_stats.length; ++i) {
+        el = sum_stats[i];
+        if (el === null) {
+            // pass
+        } else {
+            if (el.ns > 0) {
+                ln_l += el.ns*Math.log(forward_prob_table[i][0]);
+            }
+            if (el.nd > 0) {
+                ln_l += el.nd*Math.log(forward_prob_table[i][1]);
+            }
+        }
+    }
+    return ln_l;
+};
+
 var create_like_plot_points = function(sum_stats) {
     var num_points = 501;
     var step_size = 1.0/(num_points - 1);
-    var like_points = [];
+    var ss_like_points = [];
+    var full_like_points = [];
     var cur_s = 0.0;
     var i;
     for (i = 0; i < num_points; ++i) {
-        var lnl = calc_ln_like(sum_stats, cur_s);
+        var forward_prob_table = create_forward_prob_table(sum_stats.length, cur_s);
+        var lnl = calc_ln_like(sum_stats[0], cur_s);
         if (isNaN(lnl)) {
             console.log("Skipping s=" + cur_s + " which gave NaN for lnL\n");
         } else if (lnl < -1e150) {
             console.log("Skipping s=" + cur_s + " which gave -infinity lnL\n");
         } else {
-            like_points.push({"s": cur_s,
+            ss_like_points.push({"s": cur_s,
                               "likelihood": Math.exp(lnl),
                               "ln_likelihood": lnl});
+            var mdlnl = calc_missing_data_ln_like(sum_stats, forward_prob_table);
+            if (isNaN(mdlnl)) {
+                console.log("Skipping s=" + cur_s + " which gave NaN for md lnL\n");
+            } else if (mdlnl < -1e150) {
+                console.log("Skipping s=" + cur_s + " which gave -infinity md lnL\n");
+            } else {
+                var totlnl = mdlnl + lnl;
+                full_like_points.push({"s": cur_s,
+                              "likelihood": Math.exp(totlnl),
+                              "ln_likelihood": totlnl});
+            }
         }
         cur_s = cur_s + step_size;
     }
-    return like_points;
+    return [full_like_points, ss_like_points];
 };
 
 var crop_to_points_in_ci = function(points, max_ln_l, ln_l_diff) {
@@ -384,7 +443,9 @@ var crop_to_points_in_ci = function(points, max_ln_l, ln_l_diff) {
 };
 
 var update_likelihood_plots = function(sum_stats){
-    var lp = create_like_plot_points(sum_stats[0]);
+    var full_sum = create_like_plot_points(sum_stats);
+    var lp = full_sum[0];
+    var full_l = full_sum[0];
     var ydmin, ydmax;
     if (using_ln_scale) {
         if (like_line_f == line_func) {
@@ -413,9 +474,9 @@ var update_likelihood_plots = function(sum_stats){
         .duration(transition_time)
         .call(like_y_axis);
 };
-var like_points = create_like_plot_points({"nd":0, "ns":0, "n":0});
-var darr = like_line_f(like_points);
-var darea_arr = shading_func(like_points);
+var like_points = create_like_plot_points([{"nd":0, "ns":0, "n":0}]);
+var darr = like_line_f(like_points[1]);
+var darea_arr = shading_func(like_points[1]);
 like_svg.append("path")
        .data(like_points)
        .attr("class", "area")
