@@ -7,11 +7,16 @@ var draw_text_color = ["black", "white", "black", "white", "black"];
 var num_urns = 4;
 var MISSING_CODE = 4;
 
-var switch_prob = 7.0/16.0;
-var missing_prob = 0.5
+var switch_prob = 0.5;
 var num_samples_per_click = 1;
 var g_s_hat = '?';
 var using_ln_scale = true;
+
+var missing_prob_total = 0.5; // =switch_prob*missing_prob_diff + (1-switch_prob)*missing_prob_same
+var miss_bias_goal = 2.0; // desired missing_prob_diff/missing_prob_same
+var missing_prob_diff = 0.5;
+var missing_prob_same = 0.5;
+var use_bias_in_missing_data = false;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // slider code from https://bl.ocks.org/johnwalley/e1d256b81e51da68f7feb632a53c3518
@@ -45,9 +50,9 @@ var slider_missing_prob = d3.sliderBottom()
     .width(450)
     .tickFormat(d3.format('.2'))
     .ticks(10)
-    .default(missing_prob)
+    .default(missing_prob_total)
     .on('onchange', function(val) {
-        missing_prob = val;
+        set_missing_prob_total(val);
         d3.select('#value-missing-prob')
             .text(d3.format('.2')(val));
         clear_data();
@@ -60,7 +65,7 @@ var g_missing_svg = d3.select('span#missing-prob-slider')
     .attr('transform', 'translate(30,30)');
 g_missing_svg.call(slider_missing_prob);
 d3.select('#value-missing-prob')
-            .text(d3.format('.2')(missing_prob));
+            .text(d3.format('.2')(missing_prob_total));
 
 var slider_num_obs = d3.sliderBottom()
     .min(1)
@@ -88,17 +93,40 @@ d3.select('#btn-num-obs')
             .text(d3.format(">3d")(num_samples_per_click));
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+var set_missing_prob_total = function(val) {
+    missing_prob_total = val;
+    clear_data();
+};
 
+var trigger_conditional_missing_prob_recalc = function() {
+    if (use_bias_in_missing_data) {
+        var frac_same = 1 - switch_prob;
+        var b = miss_bias_goal;
+        missing_prob_diff = b*missing_prob_total/(frac_same + b - b*frac_same);
+        if (missing_prob_diff > 1.0) {
+            missing_prob_diff = 1.0;
+            missing_prob_same = (missing_prob_total + frac_same - 1)/frac_same;
+        } else {
+            missing_prob_same = missing_prob_diff/b;
+        }
+    } else {
+        missing_prob_diff = missing_prob_total;
+        missing_prob_same = missing_prob_total;
+    }
+};
 
 var draw_random_urn_index = function () {
     return Math.floor(Math.random() * num_urns);
 };
 
 var draw_next_bead = function(sprob) {
+    var missing_prob;
     for (i = 0; i < num_samples_per_click; ++i) {
         var next_ind = global_draws.length;
+        missing_prob = missing_prob_same;
         if (next_ind == 0) {
             global_draws[next_ind] = draw_random_urn_index();
+            missing_prob = missing_prob_same;
         } else {
             var curr_ind = global_draws[global_draws.length - 1];
             var new_ind = curr_ind;
@@ -106,6 +134,7 @@ var draw_next_bead = function(sprob) {
                 while (new_ind == curr_ind) {
                     new_ind = draw_random_urn_index();
                 }
+                missing_prob = missing_prob_diff;
             }
             global_draws[next_ind] = new_ind;
         }
@@ -123,6 +152,7 @@ var clear_data = function() {
     global_draws = [];
     filtered_draws = [];
     num_missing = 0;
+    trigger_conditional_missing_prob_recalc();
     update_data_boxes(filtered_draws);
     update_inference(filtered_draws);
 };
@@ -132,6 +162,8 @@ d3.select(".clearbtn")
     .attr("onclick", "clear_data()");
 d3.select("#logtransform")
     .attr("onclick", "toggle_scaling()");
+d3.select("#dobias")
+    .attr("onclick", "toggle_bias()");
 
 var update_inference = function(data) {
     var sum_stats = update_summary_stats(data);
@@ -300,6 +332,12 @@ var set_scaling = function() {
 };
 
 set_scaling();
+var toggle_bias = function() {
+    var is_checked = document.getElementById("dobias").checked;
+    use_bias_in_missing_data = is_checked;
+    clear_data();
+};
+
 
 var toggle_scaling = function() {
     var title_element = d3.select("#tracetitle");
@@ -324,11 +362,13 @@ var like_x_axis = function(el) {
 };
 
 var like_y_axis = function(el) {
+    el.attr("color", "blue")
     el.attr("transform", "translate(" + like_margin.left + ", 0)")
         .call(d3.axisLeft(y_scaler).ticks(10).tickSizeOuter(0));
 };
 
 var ss_like_y_axis = function(el) {
+    el.attr("color", "red")
     el.attr("transform", "translate(" + (like_width - like_margin.right) + ", 0)")
         .call(d3.axisRight(ss_y_scaler).ticks(10).tickSizeOuter(0));
 };

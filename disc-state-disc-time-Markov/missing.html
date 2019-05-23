@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns="http://www.w3.org/1999/html">
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="index.css">
@@ -15,6 +15,10 @@
           <span id="value-switch-prob"></span><br/>
           <span id="switch-prob-slider"></span>
       </div>
+      <label>
+          <input id="dobias" type="checkbox" name="missing-bias" value="value-missing-bias">
+      </label>Missing biased to state-changes</input>
+      <br />
       <div class="swprob">
           <span>Probability of missing data = </span>
           <span id="value-missing-prob"></span><br/>
@@ -28,7 +32,7 @@
       <div>
           <span>Simulate:</span>
           &nbsp;&nbsp;&nbsp;<button class="clearbtn">Clear</button>
-          &nbsp;&nbsp;&nbsp;<button class="simbtn">Draw next <span display="inline-block" id="btn-num-obs"></span> sample(s)</button>
+          &nbsp;&nbsp;&nbsp;<button class="simbtn">Draw next <span id="btn-num-obs"></span> sample(s)</button>
       </div>
       <div><span>Simulated data (<i>n = </i></span> <span id="samplesize">0</span>):</div>
       <div class="drawcont"></div>
