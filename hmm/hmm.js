@@ -28,7 +28,7 @@ var changed_c = function() {
     g_true_c = parseInt(c_chooser.value);
     console.log("g_true_c =" + g_true_c);
     var i;
-    for (i = 0; i <= 4; ++i) {
+    for (i = 0; i < 4; ++i) {
         if (i + 1 > g_true_c) {
             set_bead_activity(i, false);
         } else {
@@ -59,7 +59,38 @@ var set_bead_activity = function(index, val) {
     }
 };
 
-
+var manual_entry = function(urn_or_bead, val) {
+    var classname, container, new_el, styling;
+    if (urn_or_bead == 0) {
+        container = document.getElementById("manualurns");
+        if (val == 0 || val == 1) {
+            new_el = document. createElement("button");
+            classname = "btnManualUrn";
+            if (val == 0) {
+                styling = "background-color: #ffa500;color: #000000";
+            } else {
+                styling = "background-color: #006400;color: #FFFFFF";
+            }
+            new_el.setAttribute("class", classname);
+            new_el.setAttribute("style", styling);
+            new_el.textContent = "⚱";
+        }
+    } else {
+        container = document.getElementById("manualbeads");
+        if (val == 0 || val == 1) {
+            new_el = document. createElement("button");
+            classname = "button" + val;
+            new_el.setAttribute("class", classname);
+        }
+    }
+    if (val == -1) {
+        if (container.childNodes.length > 0) {
+            container.removeChild(container.lastElementChild);
+        }
+    } else {
+        container.appendChild(new_el);
+    }
+};
 var changed_s = function() {
     g_true_s = + s_chooser.value;
     console.log("g_true_s =" + g_true_s);

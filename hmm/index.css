@@ -20,13 +20,44 @@ body {
 button {
     background-color: aqua;
     color: black;
-    font-size: large;
+    font-size: x-large;
+    border-radius: 20%;
+    padding: 2px;
+    margin: -2px -2px;
 }
+
+.simpleButton {
+    background-color: aqua;
+    color: black;
+    font-size: medium;
+    border-radius: 0%;
+    padding: 1px;
+    margin: -2px -2px;
+}
+
 
 table, th, td {
     text-align: center;
 }
 
+
+.btnManualUrn {
+    border: none;
+    padding: 3px;
+    display: inline-block;
+    font-size: 16px;
+    margin: 3px 1px;
+    border-radius: 30%;
+}
+
+.btnManualBead {
+    border: none;
+    padding: 10px;
+    display: inline-block;
+    font-size: 12px;
+    margin: 1px 1px;
+    border-radius: 50%;
+}
 
 .button0 {
     background-color: #ffa500;
