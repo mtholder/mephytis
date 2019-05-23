@@ -84,6 +84,12 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+var rand_urn = function(urn) {
+    var i;
+    for (i = 0; i < g_true_c; ++i) {
+        rand_bead(urn, i);
+    }
+};
 var rand_bead = async function(urn, bead) {
     var sel_bead = bead_color_btn_arr[urn][bead];
     sel_bead.style.display = "none";
