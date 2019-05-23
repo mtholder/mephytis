@@ -75,8 +75,7 @@ var slider_num_obs = d3.sliderBottom()
     .ticks(10)
     .default(num_samples_per_click)
     .on('onchange', function(val) {
-        var fv = Math.floor(val);
-        num_samples_per_click = fv;
+        num_samples_per_click = Math.floor(val);
         d3.select('#btn-num-obs')
             .text(d3.format(">3d")(num_samples_per_click));
     });
@@ -120,7 +119,7 @@ var draw_random_urn_index = function () {
 };
 
 var draw_next_bead = function(sprob) {
-    var missing_prob;
+    var missing_prob, i;
     for (i = 0; i < num_samples_per_click; ++i) {
         var next_ind = global_draws.length;
         missing_prob = missing_prob_same;
@@ -279,9 +278,9 @@ var y_scaler, line_func, ss_y_scaler, ss_line_func;
 
 var s_scaler = function(d) {return like_x(d.s);};
 var l_scaler = function(d) {return like_y(d.likelihood);};
-var lnl_scaler = function(d) {return ln_like_linear_scale_y(d.ln_likelihood);}
+var lnl_scaler = function(d) {return ln_like_linear_scale_y(d.ln_likelihood);};
 var ss_l_scaler = function(d) {return ss_like_y(d.likelihood);};
-var ss_lnl_scaler = function(d) {return ss_ln_like_linear_scale_y(d.ln_likelihood);}
+var ss_lnl_scaler = function(d) {return ss_ln_like_linear_scale_y(d.ln_likelihood);};
 var like_line_f = d3.line()
             .x(s_scaler)
             .y(l_scaler);
@@ -311,7 +310,8 @@ var ss_ln_like_shading = d3.area()
     .x(s_scaler)
     .y0(like_height)
     .y1(ss_lnl_scaler);
-var shading_func, ss_shading_func;
+var shading_func = ln_like_shading;
+var ss_shading_func = ss_ln_like_shading;
 
 var set_scaling = function() {
     if (using_ln_scale) {
@@ -333,8 +333,7 @@ var set_scaling = function() {
 
 set_scaling();
 var toggle_bias = function() {
-    var is_checked = document.getElementById("dobias").checked;
-    use_bias_in_missing_data = is_checked;
+    use_bias_in_missing_data = document.getElementById("dobias").checked;
     clear_data();
 };
 
@@ -362,13 +361,13 @@ var like_x_axis = function(el) {
 };
 
 var like_y_axis = function(el) {
-    el.attr("color", "blue")
+    el.attr("color", "blue");
     el.attr("transform", "translate(" + like_margin.left + ", 0)")
         .call(d3.axisLeft(y_scaler).ticks(10).tickSizeOuter(0));
 };
 
 var ss_like_y_axis = function(el) {
-    el.attr("color", "red")
+    el.attr("color", "red");
     el.attr("transform", "translate(" + (like_width - like_margin.right) + ", 0)")
         .call(d3.axisRight(ss_y_scaler).ticks(10).tickSizeOuter(0));
 };
@@ -380,19 +379,6 @@ var like_svg = d3.select("#likelihood-trace-div")
         .attr("width", like_width)
         .attr("height", like_height);
 
-
-var calc_like = function(sum_stats, switch_bin_prob) {
-    var nti = sum_stats.nd + sum_stats.ns;
-    if (nti == 0) {
-        if (sum_stats.n == 0) {
-            return 1.0;
-        }
-        return 0.25;
-    }
-    var third_of_switch = switch_bin_prob/3.0;
-    var nonswitch = 1.0 - switch_bin_prob;
-    return 0.25*Math.pow(third_of_switch, sum_stats.nd)*Math.pow(nonswitch, sum_stats.ns);
-};
 
 var calc_ln_like = function(sum_stats, switch_bin_prob) {
     var ns = sum_stats.ns;

@@ -43,8 +43,7 @@ var slider_num_obs = d3.sliderBottom()
     .ticks(10)
     .default(num_samples_per_click)
     .on('onchange', function(val) {
-        var fv = Math.floor(val);
-        num_samples_per_click = fv;
+        num_samples_per_click = Math.floor(val);
         d3.select('#btn-num-obs')
             .text(d3.format(">3d")(num_samples_per_click));
     });
@@ -68,6 +67,7 @@ var draw_random_urn_index = function () {
 };
 
 var draw_next_bead = function(sprob) {
+    var i;
     for (i = 0; i < num_samples_per_click; ++i) {
         if (global_draws.length == 0) {
             global_draws[0] = draw_random_urn_index();
@@ -155,9 +155,6 @@ var like_x = d3.scaleLinear()
 var like_y = d3.scaleLinear()
         .domain([0.0, 1.00001])
         .range([like_height - like_margin.bottom, like_margin.top]);
-var ln_like_ln_scale_y = d3.scaleLog()
-    .domain([1e-6, 1.00001])
-    .range([like_height - like_margin.bottom, like_margin.top]);
 var ln_like_linear_scale_y = d3.scaleLinear()
     .domain([Math.log(1e-6), 0.00001])
     .range([like_height - like_margin.bottom, like_margin.top]);
@@ -165,7 +162,7 @@ var y_scaler, line_func;
 
 var s_scaler = function(d) {return like_x(d.s);};
 var l_scaler = function(d) {return like_y(d.likelihood);};
-var lnl_scaler = function(d) {return ln_like_linear_scale_y(d.ln_likelihood);}
+var lnl_scaler = function(d) {return ln_like_linear_scale_y(d.ln_likelihood);};
 var like_line_f = d3.line()
             .x(s_scaler)
             .y(l_scaler);
@@ -181,13 +178,13 @@ var ln_like_shading = d3.area()
     .x(s_scaler)
     .y0(like_height)
     .y1(lnl_scaler);
-var shading_func;
+var shading_func = ln_like_shading;
 
 var set_scaling = function() {
     if (using_ln_scale) {
         y_scaler = ln_like_linear_scale_y;
         line_func = ln_like_line_f;
-        shading_func = ln_like_shading
+        shading_func = ln_like_shading;
     } else {
         y_scaler = like_y;
         line_func = like_line_f;
@@ -230,7 +227,7 @@ var like_svg = d3.select("#likelihood-trace-div")
         .attr("width", like_width)
         .attr("height", like_height);
 
-
+/*
 var calc_like = function(sum_stats, switch_bin_prob) {
     var nti = sum_stats.nd + sum_stats.ns;
     if (nti == 0) {
@@ -242,7 +239,7 @@ var calc_like = function(sum_stats, switch_bin_prob) {
     var third_of_switch = switch_bin_prob/3.0;
     var nonswitch = 1.0 - switch_bin_prob;
     return 0.25*Math.pow(third_of_switch, sum_stats.nd)*Math.pow(nonswitch, sum_stats.ns);
-};
+};*/
 
 var calc_ln_like = function(sum_stats, switch_bin_prob) {
     var ns = sum_stats.ns;
