@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="index.css">
-    <title>Demo: Markov model with discrete time and state space</title>
+    <title>Missing Data Demo: Markov model with discrete time and state space</title>
 </head>
 <body>
   <p>See <a target="_blank" href="../tex/discrete-time-and-state-Markov.pdf">discrete-time-and-state-Markov.pdf</a>
-  for notes and background information.</p>
+  for notes and background information. See the non-missing data form <a href="./index.html">here</a>.</p>
   <div class="simgroup">
       <h3>Simulation:</h3>
       <div class="swprob">
@@ -15,7 +15,11 @@
           <span id="value-switch-prob"></span><br/>
           <span id="switch-prob-slider"></span>
       </div>
-      <br/>
+      <div class="swprob">
+          <span>Probability of missing data = </span>
+          <span id="value-missing-prob"></span><br/>
+          <span id="missing-prob-slider"></span>
+      </div>
       <div class="numobs">
           <span># samples per button click: </span>
           <br/>
@@ -53,7 +57,7 @@
 
     <script src="../d3/d3.v5.min.js"></script>
     <script src="../d3-simple-slider/d3-simple-slider.js"></script>
-    <script src="dsdtmarkov.js"></script>
+    <script src="missingdsdtmarkov.js"></script>
 </body>
 
 

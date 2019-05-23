@@ -1,10 +1,14 @@
 var global_draws = [];
-var draw_text = "ACGT";
-var draw_color = ["aqua", "darkgreen", "orange", "magenta"];
-var draw_text_color = ["black", "white", "black", "white"];
-var num_urns = draw_text.length;
+var filtered_draws = [];
+var num_missing = 0;
+var draw_text = "ACGT?";
+var draw_color = ["aqua", "darkgreen", "orange", "magenta", "lightgrey"];
+var draw_text_color = ["black", "white", "black", "white", "black"];
+var num_urns = 4;
+var MISSING_CODE = 4;
 
 var switch_prob = 7.0/16.0;
+var missing_prob = 0.5
 var num_samples_per_click = 1;
 var g_s_hat = '?';
 var using_ln_scale = true;
@@ -34,6 +38,29 @@ var g_switch_svg = d3.select('span#switch-prob-slider')
 g_switch_svg.call(slider_switch_prob);
 d3.select('#value-switch-prob')
             .text(d3.format('.2')(switch_prob));
+
+var slider_missing_prob = d3.sliderBottom()
+    .min(0.0)
+    .max(1.0)
+    .width(450)
+    .tickFormat(d3.format('.2'))
+    .ticks(10)
+    .default(missing_prob)
+    .on('onchange', function(val) {
+        missing_prob = val;
+        d3.select('#value-missing-prob')
+            .text(d3.format('.2')(val));
+        clear_data();
+    });
+var g_missing_svg = d3.select('span#missing-prob-slider')
+    .append('svg')
+    .attr('width', 500)
+    .attr('height', 70)
+    .append('g')
+    .attr('transform', 'translate(30,30)');
+g_missing_svg.call(slider_missing_prob);
+d3.select('#value-missing-prob')
+            .text(d3.format('.2')(missing_prob));
 
 var slider_num_obs = d3.sliderBottom()
     .min(1)
@@ -69,8 +96,9 @@ var draw_random_urn_index = function () {
 
 var draw_next_bead = function(sprob) {
     for (i = 0; i < num_samples_per_click; ++i) {
-        if (global_draws.length == 0) {
-            global_draws[0] = draw_random_urn_index();
+        var next_ind = global_draws.length;
+        if (next_ind == 0) {
+            global_draws[next_ind] = draw_random_urn_index();
         } else {
             var curr_ind = global_draws[global_draws.length - 1];
             var new_ind = curr_ind;
@@ -79,16 +107,24 @@ var draw_next_bead = function(sprob) {
                     new_ind = draw_random_urn_index();
                 }
             }
-            global_draws[global_draws.length] = new_ind;
+            global_draws[next_ind] = new_ind;
+        }
+        if (Math.random() < missing_prob) {
+            filtered_draws[next_ind] = MISSING_CODE;
+            num_missing = num_missing + 1;
+        } else {
+            filtered_draws[next_ind] = global_draws[next_ind];
         }
     }
-    update_data_boxes(global_draws);
-    update_inference(global_draws);
+    update_data_boxes(filtered_draws);
+    update_inference(filtered_draws);
 };
 var clear_data = function() {
     global_draws = [];
-    update_data_boxes(global_draws);
-    update_inference(global_draws);
+    filtered_draws = [];
+    num_missing = 0;
+    update_data_boxes(filtered_draws);
+    update_inference(filtered_draws);
 };
 d3.select(".simbtn")
     .attr("onclick", "draw_next_bead(switch_prob)");
@@ -102,30 +138,72 @@ var update_inference = function(data) {
     update_likelihood_plots(sum_stats);
 };
 
+var _pad_ss_arr = function(ss_arr, ind) {
+    while (ind >= ss_arr.length) {
+        ss_arr.push(null);
+    }
+    if (ss_arr[ind] === null) {
+        ss_arr[ind] = {"nd":0, "ns": 0};
+    }
+};
+
+var add_change = function(ss_arr, ind){
+    _pad_ss_arr(ss_arr, ind);
+    ss_arr[ind].nd = 1 + ss_arr[ind].nd;
+};
+
+var add_non_change = function(ss_arr, ind){
+    _pad_ss_arr(ss_arr, ind);
+    ss_arr[ind].ns = 1 + ss_arr[ind].ns;
+};
+
 var update_summary_stats = function(data) {
-    var ns = 0;
-    var nd = 0;
+    var ss_arr = [];
     var i;
-    if (data.length > 1) {
-        for (i = 1; i < data.length; ++i) {
-            if (data[i] == data[i - 1]) {
-                ns = ns + 1;
+    var consec_num_missing = 0;
+    var prev_non_missing = null;
+    if (data.length == 0) {
+        _pad_ss_arr(ss_arr, 0);
+    } else if (data.length > 0 && data[0] == MISSING_CODE) {
+        consec_num_missing = 1;
+    } else {
+        prev_non_missing = data[0];
+    }
+    for (i = 1; i < data.length; ++i) {
+        if (data[i] == MISSING_CODE) {
+            consec_num_missing = consec_num_missing + 1;
+        } else {
+            if (data[i - 1] == MISSING_CODE) {
+                if (prev_non_missing === null) {
+                    // no op
+                } else if (data[i] == data[i - 1]) {
+                    add_non_change(ss_arr, consec_num_missing);
+                } else {
+                    add_change(ss_arr, consec_num_missing);
+                }
             } else {
-                nd = nd + 1;
+                if (data[i] == data[i - 1]) {
+                    add_non_change(ss_arr, consec_num_missing);
+                } else {
+                    add_change(ss_arr, consec_num_missing);
+                }
             }
+            consec_num_missing = 0;
+            prev_non_missing = data[i];
         }
     }
-    d3.select("#value-ndiffs").text(nd);
-    d3.select("#value-nsame").text(ns);
-    d3.select("#value-ntransitions").text(ns + nd);
-    if (ns + nd == 0) {
+    var nmn = ss_arr[0].ns + ss_arr[0].nd;
+    d3.select("#value-ndiffs").text(ss_arr[0].nd);
+    d3.select("#value-nsame").text(ss_arr[0].ns);
+    d3.select("#value-ntransitions").text(nmn);
+    if (nmn == 0) {
         g_s_hat = '?';
         d3.select("#value-estimate-of-s").text(g_s_hat);
     } else {
-        g_s_hat = nd/(nd + ns);
+        g_s_hat = ss_arr[0].nd/nmn;
         d3.select("#value-estimate-of-s").text(d3.format(".3f")(g_s_hat));
     }
-    return {"nd": nd, "ns": ns, "n": data.length};
+    return ss_arr;
 };
 
 var update_data_boxes = function (data) {
@@ -209,7 +287,7 @@ var toggle_scaling = function() {
     }
     using_ln_scale = ! using_ln_scale;
     set_scaling();
-    update_inference(global_draws);
+    update_inference(filtered_draws);
 
 };
 
@@ -306,7 +384,7 @@ var crop_to_points_in_ci = function(points, max_ln_l, ln_l_diff) {
 };
 
 var update_likelihood_plots = function(sum_stats){
-    var lp = create_like_plot_points(sum_stats);
+    var lp = create_like_plot_points(sum_stats[0]);
     var ydmin, ydmax;
     if (using_ln_scale) {
         if (like_line_f == line_func) {
