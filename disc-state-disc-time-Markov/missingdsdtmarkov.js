@@ -234,23 +234,34 @@ var like_x = d3.scaleLinear()
 var like_y = d3.scaleLinear()
         .domain([0.0, 1.00001])
         .range([like_height - like_margin.bottom, like_margin.top]);
-var ln_like_ln_scale_y = d3.scaleLog()
-    .domain([1e-6, 1.00001])
-    .range([like_height - like_margin.bottom, like_margin.top]);
 var ln_like_linear_scale_y = d3.scaleLinear()
     .domain([Math.log(1e-6), 0.00001])
     .range([like_height - like_margin.bottom, like_margin.top]);
-var y_scaler, line_func;
+var ss_like_y = d3.scaleLinear()
+        .domain([0.0, 1.00001])
+        .range([like_height - like_margin.bottom, like_margin.top]);
+var ss_ln_like_linear_scale_y = d3.scaleLinear()
+    .domain([Math.log(1e-6), 0.00001])
+    .range([like_height - like_margin.bottom, like_margin.top]);
+var y_scaler, line_func, ss_y_scaler, ss_line_func;
 
 var s_scaler = function(d) {return like_x(d.s);};
 var l_scaler = function(d) {return like_y(d.likelihood);};
 var lnl_scaler = function(d) {return ln_like_linear_scale_y(d.ln_likelihood);}
+var ss_l_scaler = function(d) {return ss_like_y(d.likelihood);};
+var ss_lnl_scaler = function(d) {return ss_ln_like_linear_scale_y(d.ln_likelihood);}
 var like_line_f = d3.line()
             .x(s_scaler)
             .y(l_scaler);
 var ln_like_line_f = d3.line()
             .x(s_scaler)
             .y(lnl_scaler);
+var ss_like_line_f = d3.line()
+            .x(s_scaler)
+            .y(ss_l_scaler);
+var ss_ln_like_line_f = d3.line()
+            .x(s_scaler)
+            .y(ss_lnl_scaler);
 
 var like_shading = d3.area()
     .x(s_scaler)
@@ -260,17 +271,31 @@ var ln_like_shading = d3.area()
     .x(s_scaler)
     .y0(like_height)
     .y1(lnl_scaler);
-var shading_func;
+var ss_like_shading = d3.area()
+    .x(s_scaler)
+    .y0(like_height - like_margin.bottom)
+    .y1(ss_l_scaler);
+var ss_ln_like_shading = d3.area()
+    .x(s_scaler)
+    .y0(like_height)
+    .y1(ss_lnl_scaler);
+var shading_func, ss_shading_func;
 
 var set_scaling = function() {
     if (using_ln_scale) {
         y_scaler = ln_like_linear_scale_y;
         line_func = ln_like_line_f;
-        shading_func = ln_like_shading
+        shading_func = ln_like_shading;
+        ss_y_scaler = ss_ln_like_linear_scale_y;
+        ss_line_func = ss_ln_like_line_f;
+        ss_shading_func = ss_ln_like_shading;
     } else {
         y_scaler = like_y;
         line_func = like_line_f;
         shading_func = like_shading;
+        ss_y_scaler = ss_like_y;
+        ss_line_func = ss_like_line_f;
+        ss_shading_func = ss_like_shading;
     }
 };
 
@@ -302,6 +327,12 @@ var like_y_axis = function(el) {
     el.attr("transform", "translate(" + like_margin.left + ", 0)")
         .call(d3.axisLeft(y_scaler).ticks(10).tickSizeOuter(0));
 };
+
+var ss_like_y_axis = function(el) {
+    el.attr("transform", "translate(" + (like_width - like_margin.right) + ", 0)")
+        .call(d3.axisRight(ss_y_scaler).ticks(10).tickSizeOuter(0));
+};
+
 
 var like_svg = d3.select("#likelihood-trace-div")
     .append("svg")
@@ -444,56 +475,92 @@ var crop_to_points_in_ci = function(points, max_ln_l, ln_l_diff) {
 
 var update_likelihood_plots = function(sum_stats){
     var full_sum = create_like_plot_points(sum_stats);
-    var lp = full_sum[0];
-    var full_l = full_sum[0];
-    var ydmin, ydmax;
+    var ss_lp = full_sum[1];
+    var full_lp = full_sum[0];
+    var ss_ydmin, ss_ydmax, full_ydmin, full_ydmax;
     if (using_ln_scale) {
-        if (like_line_f == line_func) {
-            ydmax = d3.max(lp, function (d) {return d.likelihood;});
-            ydmin = ydmax/1e6;
+        if (ss_like_line_f == ss_line_func) {
+            ss_ydmax = d3.max(ss_lp, function (d) {return d.likelihood;});
+            ss_ydmin = ss_ydmax/1e6;
+            full_ydmax = d3.max(full_lp, function (d) {return d.likelihood;});
+            full_ydmin = full_ydmax/1e6;
         } else {
-            ydmax = d3.max(lp, function (d) {return d.ln_likelihood;});
-            ydmin = ydmax - 12;
+            ss_ydmax = d3.max(ss_lp, function (d) {return d.ln_likelihood;});
+            ss_ydmin = ss_ydmax - 12;
+            full_ydmax = d3.max(full_lp, function (d) {return d.ln_likelihood;});
+            full_ydmin = full_ydmax - 12;
         }
     } else {
-        ydmax = d3.max(lp, function (d) {return d.likelihood;});
-        ydmin = min_y_for_scaling;
+        ss_ydmax = d3.max(ss_lp, function (d) {return d.likelihood;});
+        ss_ydmin = min_y_for_scaling;
+        full_ydmax = d3.max(full_lp, function (d) {return d.likelihood;});
+        full_ydmin = min_y_for_scaling;
     }
-    var alp = crop_to_points_in_ci(lp, ydmax, 1.92);
-    y_scaler.domain([ydmin, ydmax]);
-    like_svg.transition();
+    var ss_alp = crop_to_points_in_ci(ss_lp, ss_ydmax, 1.92);
+    var full_alp = crop_to_points_in_ci(full_lp, full_ydmax, 1.92);
+    like_y.domain([full_ydmin, full_ydmax]);
+    ln_like_linear_scale_y.domain([full_ydmin, full_ydmax]);
+    ss_like_y.domain([ss_ydmin, ss_ydmax]);
+    ss_ln_like_linear_scale_y.domain([ss_ydmin, ss_ydmax]);
+
     var transition_time = 400;
     var moving = like_svg.transition();
+    moving.select(".ssline")
+        .duration(transition_time)
+        .attr("d", ss_line_func(ss_lp));
+    moving.select(".ssarea")
+        .duration(transition_time)
+        .attr("d", ss_shading_func(ss_alp));
+    moving.select(".ssy.axis")
+        .duration(transition_time)
+        .call(ss_like_y_axis);
     moving.select(".line")
         .duration(transition_time)
-        .attr("d", line_func(lp));
+        .attr("d", line_func(full_lp));
     moving.select(".area")
         .duration(transition_time)
-        .attr("d", shading_func(alp));
+        .attr("d", shading_func(full_alp));
     moving.select(".y.axis")
         .duration(transition_time)
         .call(like_y_axis);
 };
 var like_points = create_like_plot_points([{"nd":0, "ns":0, "n":0}]);
-var darr = like_line_f(like_points[1]);
-var darea_arr = shading_func(like_points[1]);
+var darr = like_line_f(like_points[0]);
+var darea_arr = shading_func(like_points[0]);
+var ss_darr = ss_like_line_f(like_points[1]);
+var ss_darea_arr = ss_shading_func(like_points[1]);
 like_svg.append("path")
-       .data(like_points)
+       .data(like_points[0])
        .attr("class", "area")
        .attr("d", darea_arr);
+like_svg.append("path")
+       .data(like_points[1])
+       .attr("class", "ssarea")
+       .attr("d", ss_darea_arr);
 
 like_svg.append("path")
     .attr("fill", "none")
-    .attr("stroke", "black")
+    .attr("stroke", "blue")
     .attr("stroke-width", 1.5)
     .attr("stroke-linejoin", "round")
     .attr("stroke-linecap", "round")
     .attr("class", "line")
     .attr("d", darr);
+like_svg.append("path")
+    .attr("fill", "none")
+    .attr("stroke", "red")
+    .attr("stroke-width", 1.5)
+    .attr("stroke-linejoin", "round")
+    .attr("stroke-linecap", "round")
+    .attr("class", "ssline")
+    .attr("d", ss_darr);
 like_svg.append("g").call(like_x_axis);
 like_svg.append("g")
     .attr("class", "y axis")
     .call(like_y_axis);
+like_svg.append("g")
+    .attr("class", "ssy axis")
+    .call(ss_like_y_axis);
 
 like_svg.append("text")
       .attr("transform",
