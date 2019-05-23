@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="index.css">
+    <title>Demo: Markov model with discrete time and state space</title>
+</head>
+<body>
+  <p>See <a target="_blank" href="../tex/discrete-time-and-state-Markov.pdf">discrete-time-and-state-Markov.pdf</a>
+  for notes and background information. See the missing data form <a href="./missing.html">here</a></p>
+  <div class="simgroup">
+      <h3>Simulation:</h3>
+      <div class="swprob">
+          <span>True color switch probability = </span>
+          <span id="value-switch-prob"></span><br/>
+          <span id="switch-prob-slider"></span>
+      </div>
+      <div class="numobs">
+          <span># samples per button click: </span>
+          <br/>
+          <span id="num-obs-slider"></span>
+      </div>
+      <div>
+          <span>Simulate:</span>
+          &nbsp;&nbsp;&nbsp;<button class="clearbtn">Clear</button>
+          &nbsp;&nbsp;&nbsp;<button class="simbtn">Draw next <span id="btn-num-obs"></span> sample(s)</button>
+      </div>
+      <div><span>Simulated data (<i>n = </i></span> <span id="samplesize">0</span>):</div>
+      <div class="drawcont"></div>
+  </div>
+  <div class="inference">
+      <h3>Inferential stats:</h3>
+      <table>
+          <tr><td><i>n - 1 = </i><span id="value-ntransitions">0</span></td>
+              <td># observed transitions</td>
+          </tr>
+          <tr><td><i>n<sub>d</sub> = </i><span id="value-ndiffs">0</span></td>
+              <td>number of color changes</td>
+          </tr>
+          <tr><td><i>n<sub>s</sub> = </i><span id="value-nsame">0</span></td>
+              <td># adjacent samples with same color</td>
+          </tr>
+          <tr><td><i>ŝ = </i><span id="value-estimate-of-s">?</span></td>
+              <td>estimate of the switch probability</td>
+          </tr>
+      </table>
+      <p><b id="tracetitle">Ln Likelihood</b>
+         <button id="logtransform">Move to probability scale</button>
+      </p>
+      <div id="likelihood-trace-div"></div>
+  </div>
+
+    <script src="../d3/d3.v5.min.js"></script>
+    <script src="../d3-simple-slider/d3-simple-slider.js"></script>
+    <script src="dsdtmarkov.js"></script>
+</body>
+
+
+<div class="footer">
+    <h4></h4>
+    <p>Back to the demo <a href="../index.html">table of contents...</a></p>
+    <p> Source code at <a href="https://github.com/mtholder/mephytis">https://github.com/mtholder/mephytis</a></p>
+
+</div>
+</html>

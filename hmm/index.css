@@ -1,0 +1,44 @@
+html {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    margin: 3px;
+    padding: 0;
+    font-size: large;
+    font-family: "Comic Sans MS", cursive, sans-serif;
+}
+
+.footer {
+    margin: 0;
+    padding: 0;
+    font-size: small;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+button {
+    background-color: aqua;
+    color: black;
+}
+
+.clearbtn {
+    background-color: lightpink;
+}
+
+.block {
+    display:inline-block;
+    text-align: center;
+}
+
+table {
+    text-align:right;
+}
+
+.area {
+  fill: rgba(0, 0, 255, 0.3);
+}
+
+.ssarea {
+    fill: rgba(255, 0, 0, 0.3);
+}
