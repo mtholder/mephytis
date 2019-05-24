@@ -11,6 +11,7 @@ var using_ln_scale = true;
 
 var s_chooser, c_chooser;
 var g_true_s, g_true_c;
+var g_switch_prob = 0.5;
 var s_domain_str = ["0.25", "0.5", "0.75"];
 var s_domain = [0.25, 0.5, 0.75];
 var c_domain_str = ["1", "2", "3", "4"];
@@ -19,9 +20,11 @@ var bead_color_btn_arr = [[null, null, null, null], [null, null, null, null]];
 var bead_color_rand_btn_arr = [[null, null, null, null], [null, null, null, null]];
 var lock_icon_arr = [null, null, null, null];
 var bead_colors = [[0,0,0,0],[1,1,1,1]];
+var g_prob_zero = [1.0, 0.0];
 var bead_col_is_mutable = [true, true, true, true];
 var num_immutable_beads = 4;
 var num_mutable = 4;
+var num_beads_per_urn = num_immutable_beads + num_mutable;
 var g_n0in0=8, g_n1in0=0, g_n0in1=0, g_n1in1=8;
 var g_curr_urn = Math.floor(Math.random()*2);
 
@@ -143,6 +146,7 @@ var manual_entry = function(urn_or_bead, val) {
 };
 var changed_s = function() {
     g_true_s = + s_chooser.value;
+    g_switch_prob = 0.5*g_true_s;
     clear_data();
 };
 
@@ -207,8 +211,47 @@ var changed_beads = function() {
     d3.select("#num1in0").text(g_n1in0);
     d3.select("#num0in1").text(g_n0in1);
     d3.select("#num1in1").text(g_n1in1);
+    g_prob_zero[0] = g_n0in0/num_beads_per_urn;
+    g_prob_zero[1] = g_n0in1/num_beads_per_urn;
     clear_data();
 };
+
+var draw_random_urn_index = function () {
+    return Math.floor(Math.random() * num_urns);
+};
+
+
+var draw_next_bead = function(sprob) {
+    console.log("sprob = " + sprob);
+    var missing_prob, i;
+    for (i = 0; i < num_samples_per_click; ++i) {
+        var next_ind = g_bead_draws.length;
+        if (next_ind == 0) {
+            g_urn_draws[0] = draw_random_urn_index();
+        } else {
+            var curr_ind = g_urn_draws[g_urn_draws.length - 1];
+            var new_ind = curr_ind;
+            if (Math.random() < sprob) {
+                new_ind = 1 - curr_ind;
+            }
+            g_urn_draws[next_ind] = new_ind;
+        }
+        var prob0 = g_prob_zero[g_urn_draws[next_ind]];
+        if (Math.random() < prob0) {
+            g_bead_draws[next_ind] = 0;
+        } else {
+            g_bead_draws[next_ind] = 1;
+        }
+    }
+    update_data_boxes(g_bead_draws);
+    update_inference(g_bead_draws);
+};
+
+var update_inference = function(data) {
+//    var sum_stats = update_summary_stats(data);
+//    update_likelihood_plots(sum_stats);
+};
+var g_num_obs_svg, slider_num_obs;
 
 $(document).ready(function() {
     c_chooser = document.getElementById("choose-contamination");
@@ -223,6 +266,31 @@ $(document).ready(function() {
             }
         }
     }
+    slider_num_obs = d3.sliderBottom()
+        .min(1)
+        .max(100)
+        .step(1)
+        .width(450)
+        .ticks(10)
+        .default(num_samples_per_click)
+        .on('onchange', function(val) {
+            num_samples_per_click = Math.floor(val);
+            d3.select('#btn-num-obs')
+                .text(d3.format(">3d")(num_samples_per_click));
+        });
+    g_num_obs_svg = d3.select('span#num-obs-slider')
+        .append('svg')
+        .attr('width', 500)
+        .attr('height', 70)
+        .append('g')
+        .attr('transform', 'translate(30,30)');
+    g_num_obs_svg.call(slider_num_obs);
+    d3.select('#value-num-obs')
+                .text(num_samples_per_click);
+    d3.select('#btn-num-obs')
+                .text(d3.format(">3d")(num_samples_per_click));
+    d3.select(".simbtn")
+        .attr("onclick", "draw_next_bead(g_switch_prob)");
     changed_c();
     changed_s();
     changed_beads();

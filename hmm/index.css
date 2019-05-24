@@ -17,6 +17,24 @@ body {
     font-family: Arial, Helvetica, sans-serif;
 }
 
+.diceimg {
+    width: 1.25em;
+    height: 1.25em;
+    vertical-align: middle;
+}
+.randbutton {
+    background-color: aqua;
+    border: 1px solid black;
+    height: 1em;
+    color: black;
+    font-size: x-large;
+    border-radius: 20%;
+    padding: 2px;
+    margin: -5px -5px;
+    display: inline;
+    vertical-align: middle;
+}
+
 button {
     background-color: aqua;
     color: black;
