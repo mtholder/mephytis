@@ -1,33 +1,29 @@
+// bar chart based on https://observablehq.com/@d3/grouped-bar-chart
 var g_bead_draws = [];
 var g_urn_draws = [];
-var draw_text = "RY";
-var draw_color = ["orange", "darkgreen"];
-var draw_text_color = ["black", "white"];
 var num_urns = 2;
 var num_samples_per_click = 1;
-var g_s_hat = '?';
-var using_ln_scale = true;
 var s_chooser, c_chooser;
 var g_true_s, g_true_c;
 var g_switch_prob = 0.5;
-var s_domain_str = ["0.25", "0.5", "0.75"];
-var s_domain = [0.25, 0.5, 0.75]; // prob considering a switch (only accept 50% of time)
-var g_switch_probs = [0.125, 0.25, .375]; // prob version of s_domain
-var c_domain_str = ["1", "2", "3", "4"];
-var c_domain = [1, 2, 3, 4];
-var bead_color_btn_arr = [[null, null, null, null], [null, null, null, null]];
-var bead_color_rand_btn_arr = [[null, null, null, null], [null, null, null, null]];
-var lock_icon_arr = [null, null, null, null];
-var bead_colors = [[0,0,0,0],[1,1,1,1]];
-var g_prob_zero = [1.0, 0.0];
-var bead_col_is_mutable = [true, true, true, true];
-var num_immutable_beads = 4;
-var num_mutable = 4;
-var num_beads_per_urn = num_immutable_beads + num_mutable;
-var urn0_prob_0 = [];
-var urn0_prob_1 = [];
-var urn0_ln_prob_0 = [];
-var urn0_ln_prob_1 = [];
+const s_domain_str = ["0.25", "0.5", "0.75"];
+const s_domain = [0.25, 0.5, 0.75]; // prob considering a switch (only accept 50% of time)
+const g_switch_probs = [0.125, 0.25, .375]; // prob version of s_domain
+const c_domain_str = ["1", "2", "3", "4"];
+const c_domain = [1, 2, 3, 4];
+const bead_color_btn_arr = [[null, null, null, null], [null, null, null, null]];
+const bead_color_rand_btn_arr = [[null, null, null, null], [null, null, null, null]];
+const lock_icon_arr = [null, null, null, null];
+const bead_colors = [[0,0,0,0],[1,1,1,1]];
+const g_prob_zero = [1.0, 0.0];
+const bead_col_is_mutable = [true, true, true, true];
+const num_immutable_beads = 4;
+const num_mutable = 4;
+const num_beads_per_urn = num_immutable_beads + num_mutable;
+const urn0_prob_0 = [];
+const urn0_prob_1 = [];
+const urn0_ln_prob_0 = [];
+const urn0_ln_prob_1 = [];
 var gi;
 for (gi = 0; gi <= num_mutable; ++gi) {
     urn0_prob_0[gi] = (num_beads_per_urn - gi)/(num_beads_per_urn);
@@ -35,16 +31,26 @@ for (gi = 0; gi <= num_mutable; ++gi) {
     urn0_ln_prob_0[gi] = Math.log(urn0_prob_0[gi]);
     urn0_ln_prob_1[gi] = Math.log(urn0_prob_1[gi]);
 }
-var urn1_ln_prob_1 = urn0_ln_prob_0;
-var urn1_ln_prob_0 = urn0_ln_prob_1;
-
+const urn1_ln_prob_1 = urn0_ln_prob_0;
+const urn1_ln_prob_0 = urn0_ln_prob_1;
 var g_n0in0=8, g_n1in0=0, g_n0in1=0, g_n1in1=8;
-var g_num_single_urn_config = c_domain.length + 1;
-var g_num_switch_probs = s_domain.length;
-var g_urn_prior = [0, 0, Math.log(0.5)];
-
+const g_num_single_urn_config = c_domain.length + 1;
+const g_num_switch_probs = s_domain.length;
+const g_urn_prior = [0, 0, Math.log(0.5)];
 var s_by_urnconfig_by_active_urn = null;
 var g_prev_lookup_datum_index = -1;
+var bar_svg;
+var bar_width = 520;
+var bar_height = 400;
+
+const g_prior_by_c = [[0.5,  0.5, 0,    0, 0],
+                      [0.25, 0.5, 0.25, 0, 0],
+                      [0.125, 0.375, 0.375, 0.125, 0],
+                      [0.0625, 0.25, 0.375, 0.25, 0.0625]];
+const g_lnl_by_s_then_c = [[null, null, null, null],
+                           [null, null, null, null],
+                           [null, null, null, null]];
+
 var init_lookup_table = function() {
     var si, uj, uk, aui, by_urnconfig_by_active_urn, by_sec_urn;
     s_by_urnconfig_by_active_urn = [];
@@ -64,6 +70,34 @@ var init_lookup_table = function() {
 
 var swap = function (x){return x};
 
+
+var calc_model_ln_l = function(mllnl, lookup_table) {
+    var si, uj, uk, aui, by_urnconfig_by_active_urn, by_sec_urn, s_prob;
+    var cmod_ind, c, max_contam, l_scratch, fprior, jointprior, lnl2_scratch;
+    var curr_lookup;
+    var max_urn_lnl = null;
+    for (cmod_ind = 0; cmod_ind < g_prior_by_c.length; ++cmod_ind) {
+        c = 1 +cmod_ind;
+        max_contam = 1 + c;
+        for (si = 0; si < g_num_switch_probs; ++si) {
+            by_urnconfig_by_active_urn = lookup_table[si];
+            l_scratch = 0.0;
+            for (uj = 0; uj < g_num_single_urn_config; ++uj) {
+                fprior = g_prior_by_c[cmod_ind][uj];
+                by_sec_urn = by_urnconfig_by_active_urn[uj];
+                for (uk = 0; uk < g_num_single_urn_config; ++uk) {
+                    jointprior = fprior*g_prior_by_c[cmod_ind][uk];
+                    lnl2_scratch = by_sec_urn[uk][3];
+                    lnl2_scratch -= mllnl;
+                    l_scratch += jointprior*Math.exp(lnl2_scratch);
+                }
+            }
+            g_lnl_by_s_then_c[si][cmod_ind] = Math.log(l_scratch) + mllnl;
+        }
+    }
+    return g_lnl_by_s_then_c;
+};
+
 var calc_like_for_urn_cfg = function(data, lookup_arr, s_prob, urn_i, urn_j) {
     var prev_lookup, oms, di, la_offest, datum, x1, x2, mx;
     oms = 1.0 - s_prob;
@@ -78,8 +112,6 @@ var calc_like_for_urn_cfg = function(data, lookup_arr, s_prob, urn_i, urn_j) {
     }
     for (di = 1 + la_offest; di < data.length; ++di) {
         datum = data[di];
-        //console.log("data[" + di + "] = " + datum  + " lookup = " + lookup_arr + " s_prob = " + s_prob  + " urn_i = "
-        //        + urn_i + " urn_j = " + urn_j + " prev_" + prev_lookup);
         x1 = oms*Math.exp(prev_lookup[0]) + s_prob*Math.exp(prev_lookup[1]);
         x2 = s_prob*Math.exp(prev_lookup[0]) + oms*Math.exp(prev_lookup[1]);
         if (datum === 0) {
@@ -104,12 +136,15 @@ var calc_like_for_urn_cfg = function(data, lookup_arr, s_prob, urn_i, urn_j) {
 };
 
 var update_likelihood_plots = function(data) {
+    if (data.length == 0) {
+        return;
+    }
     var si, uj, uk, aui, by_urnconfig_by_active_urn, by_sec_urn, s_prob;
     var curr_lookup;
     var max_urn_lnl = null;
     for (si = 0 ; si < g_num_switch_probs; ++si) {
         by_urnconfig_by_active_urn = s_by_urnconfig_by_active_urn[si];
-        s_prob = g_switch_probs[si]
+        s_prob = g_switch_probs[si];
         for (uj = 0; uj < g_num_single_urn_config; ++uj) {
             by_sec_urn = by_urnconfig_by_active_urn[uj];
             for (uk = 0; uk < g_num_single_urn_config; ++uk) {
@@ -122,7 +157,11 @@ var update_likelihood_plots = function(data) {
         }
     }
     console.log("max_urn_lnl = " + max_urn_lnl);
+
     g_prev_lookup_datum_index = data.length - 1;
+    var model_lnl = calc_model_ln_l(max_urn_lnl[0], s_by_urnconfig_by_active_urn);
+    var bar_data_arr = create_bar_data(max_urn_lnl, model_lnl);
+    draw_bar_svg(bar_data_arr);
 };
 
 var changed_c = function() {
@@ -266,9 +305,11 @@ var toggle_bead = function(urn, bead) {
 };
 
 // from https://stackoverflow.com/questions/951021/what-is-the-javascript-version-of-sleep
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+// noinspection SyntaxError
+var sleep = function(ms) {
+    // noinspection SyntaxError
+    return new Promise(resolve => setTimeout(resolve, ms));
+};
 
 var rand_urn = function(urn) {
     var i;
@@ -276,6 +317,8 @@ var rand_urn = function(urn) {
         rand_bead(urn, i);
     }
 };
+
+// noinspection SyntaxError
 var rand_bead = async function(urn, bead) {
     var sel_bead = bead_color_btn_arr[urn][bead];
     sel_bead.style.display = "none";
@@ -292,17 +335,15 @@ var rand_bead = async function(urn, bead) {
 };
 
 var set_bead_color = function(urn, bead, bval) {
-    var sel_bead = bead_color_btn_arr[urn][bead];
+    bead_color_btn_arr[urn][bead].className = "button" + bval;
     bead_colors[urn][bead] = bval;
-    var newclassname = "button" + bval;
-    sel_bead.className = newclassname;
     changed_beads();
 };
 
 var changed_beads = function() {
-    var urn0 = bead_colors[0]
+    var urn0 = bead_colors[0];
     var num_1_in_0 = urn0[0] + urn0[1] + urn0[2] + urn0[3] ;
-    var urn1 = bead_colors[1]
+    var urn1 = bead_colors[1];
     var num_1_in_1 = urn1[0] + urn1[1] + urn1[2] + urn1[3] ;
     g_n0in0 = num_immutable_beads + num_mutable - num_1_in_0;
     g_n1in0 = num_1_in_0;
@@ -356,6 +397,102 @@ var update_inference = function(data) {
 };
 var g_num_obs_svg, slider_num_obs;
 
+var data, bar_x0, bar_x1, bar_y, bar_xAxis, bar_yAxis;
+var bar_margin = ({top: 10, right: 10, bottom: 20, left: 40});
+var bar_group_key = "s_value";
+var bar_sub_keys = ["c = 1", "c = 2", "c = 3", "c = 4"];
+var bar_color = d3.scaleOrdinal().range(["#98abc5", "#7b6888","#a05d56", "#ff8c00" ]);
+
+var create_bar_data = function(max_urn_lnl, by_s_then_c) {
+    var bd = [];
+    var si, obj, ci, key;
+    for (si = 0; si < g_num_switch_probs; ++si) {
+        obj = {"s_value": s_domain[si]};
+        for (ci = 0 ; ci < g_num_single_urn_config; ++ci) {
+            key = "c = " + (1 + ci);
+            obj[key] = by_s_then_c[si][ci];
+        }
+        bd.push(obj);
+    }
+    return bd;
+};
+
+var draw_bar_svg = function(data) {
+    bar_y = d3.scaleLinear()
+        .domain([0, d3.max(data, d => d3.max(bar_sub_keys, key => d[key]))]).nice()
+        .rangeRound([bar_height - bar_margin.bottom, bar_margin.top])
+    bar_x0 = d3.scaleBand()
+        .domain(data.map(d => d[bar_group_key]))
+        .rangeRound([bar_margin.left, bar_width - bar_margin.right])
+        .paddingInner(0.1);
+    bar_x1 = d3.scaleBand()
+        .domain(bar_sub_keys)
+        .rangeRound([0, bar_x0.bandwidth()])
+        .padding(0.05);
+    bar_xAxis = function(g) {
+        return g.attr("transform", `translate(0,${bar_height - bar_margin.bottom})`)
+            .call(d3.axisBottom(bar_x0).tickSizeOuter(0))
+            .call(g => g.select(".domain").remove());
+    };
+    bar_yAxis = function(g) {
+        return g.attr("transform", `translate(${bar_margin.left},0)`)
+            .call(d3.axisLeft(bar_y).ticks(null, "s"))
+            .call(g => g.select(".domain").remove())
+            .call(g => g.select(".tick:last-of-type text").clone()
+                .attr("x", 3)
+                .attr("text-anchor", "start")
+                .attr("font-weight", "bold")
+                .text("ln L"));
+    };
+    var bar_legend = function(svg) {
+      const g = svg.attr("transform", `translate(${bar_width},0)`)
+          .attr("text-anchor", "end")
+          .attr("font-family", "sans-serif")
+          .attr("font-size", 10)
+        .selectAll("g")
+        .data(bar_color.domain().slice().reverse())
+        .join("g")
+          .attr("transform", (d, i) => `translate(0,${i * 20})`);
+      g.append("rect")
+          .attr("x", -19)
+          .attr("width", 19)
+          .attr("height", 19)
+          .attr("fill", bar_color);
+      g.append("text")
+          .attr("x", -24)
+          .attr("y", 9.5)
+          .attr("dy", "0.35em")
+          .text(d => d);
+      return g;
+    };
+
+    var svg = d3.select("#likeplot");
+    d3.select("g").remove();
+    svg.append("g")
+        .selectAll("g")
+        .data(data)
+        .join("g")
+          .attr("transform", d => `translate(${bar_x0(d[bar_group_key])},0)`)
+        .selectAll("rect")
+        .data(d => bar_sub_keys.map(key => ({key, value: d[key]})))
+        .join("rect")
+          .attr("x", d => bar_x1(d.key))
+          .attr("y", d => bar_y(d.value))
+          .attr("width", bar_x1.bandwidth())
+          .attr("height", d => bar_y(0) - bar_y(d.value))
+          .attr("fill", d => bar_color(d.key));
+    svg.append("g")
+      .call(bar_xAxis);
+
+      svg.append("g")
+          .call(bar_yAxis);
+
+      svg.append("g")
+          .call(bar_legend);
+
+      return svg.node();
+};
+
 $(document).ready(function() {
     c_chooser = document.getElementById("choose-contamination");
     s_chooser= document.getElementById("choose-switch");
@@ -396,6 +533,17 @@ $(document).ready(function() {
         .attr("onclick", "draw_next_bead(g_switch_prob)");
     d3.select(".clearbtn")
         .attr("onclick", "clear_data()");
+
+
+    var bar_data = [{"s_value": 0.15, "c = 1" : 1, "c = 2":2, "c = 3":3, "c = 4":5},
+                {"s_value": 0.35, "c = 1" : 4.5, "c = 2":3.5, "c = 3":2.5, "c = 4":1.5}
+               ];
+    bar_svg = d3.select("#model-choice-div")
+        .append("svg")
+        .attr("id", "likeplot")
+        .attr("width", bar_width)
+        .attr("height", bar_height);
+    //draw_bar_svg(bar_data);
     changed_c();
     changed_s();
     changed_beads();
