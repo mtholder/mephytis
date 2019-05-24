@@ -78,8 +78,8 @@ var calc_like_for_urn_cfg = function(data, lookup_arr, s_prob, urn_i, urn_j) {
     }
     for (di = 1 + la_offest; di < data.length; ++di) {
         datum = data[di];
-        console.log("data[" + di + "] = " + datum  + " lookup = " + lookup_arr + " s_prob = " + s_prob  + " urn_i = "
-                + urn_i + " urn_j = " + urn_j + " prev_" + prev_lookup);
+        //console.log("data[" + di + "] = " + datum  + " lookup = " + lookup_arr + " s_prob = " + s_prob  + " urn_i = "
+        //        + urn_i + " urn_j = " + urn_j + " prev_" + prev_lookup);
         x1 = oms*Math.exp(prev_lookup[0]) + s_prob*Math.exp(prev_lookup[1]);
         x2 = s_prob*Math.exp(prev_lookup[0]) + oms*Math.exp(prev_lookup[1]);
         if (datum === 0) {
@@ -89,7 +89,7 @@ var calc_like_for_urn_cfg = function(data, lookup_arr, s_prob, urn_i, urn_j) {
             scratch[0] = urn0_ln_prob_1[urn_i] + Math.log(x1);
             scratch[1] = urn1_ln_prob_1[urn_j] + Math.log(x2);
         }
-        mx = (x1 < x2 ? x2 : x1);
+        mx = (scratch[0] < scratch[1] ? scratch[1] : scratch[0]);
         scratch[2] = prev_lookup[2] + mx;
         scratch[0] -= mx;
         scratch[1] -= mx;
@@ -100,21 +100,28 @@ var calc_like_for_urn_cfg = function(data, lookup_arr, s_prob, urn_i, urn_j) {
     lookup_arr[1] = prev_lookup[1];
     lookup_arr[2] = prev_lookup[2];
     lookup_arr[3] = prev_lookup[2] + Math.log(Math.exp(lookup_arr[0]) + Math.exp(lookup_arr[1]));
-    console.log("new lookup = " + lookup_arr);
+    //console.log("new lookup = " + lookup_arr);
 };
 
 var update_likelihood_plots = function(data) {
     var si, uj, uk, aui, by_urnconfig_by_active_urn, by_sec_urn, s_prob;
+    var curr_lookup;
+    var max_urn_lnl = null;
     for (si = 0 ; si < g_num_switch_probs; ++si) {
         by_urnconfig_by_active_urn = s_by_urnconfig_by_active_urn[si];
         s_prob = g_switch_probs[si]
         for (uj = 0; uj < g_num_single_urn_config; ++uj) {
             by_sec_urn = by_urnconfig_by_active_urn[uj];
             for (uk = 0; uk < g_num_single_urn_config; ++uk) {
-                calc_like_for_urn_cfg(data, by_sec_urn[uk], s_prob, uj, uk);
+                curr_lookup = by_sec_urn[uk];
+                calc_like_for_urn_cfg(data, curr_lookup, s_prob, uj, uk);
+                if (max_urn_lnl === null || max_urn_lnl[0] < curr_lookup[3]) {
+                    max_urn_lnl = [curr_lookup[3], si, uj, uk];
+                }
             }
         }
     }
+    console.log("max_urn_lnl = " + max_urn_lnl);
     g_prev_lookup_datum_index = data.length - 1;
 };
 
