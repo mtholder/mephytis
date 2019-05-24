@@ -4,16 +4,15 @@ var draw_text = "RY";
 var draw_color = ["orange", "darkgreen"];
 var draw_text_color = ["black", "white"];
 var num_urns = 2;
-
 var num_samples_per_click = 1;
 var g_s_hat = '?';
 var using_ln_scale = true;
-
 var s_chooser, c_chooser;
 var g_true_s, g_true_c;
 var g_switch_prob = 0.5;
 var s_domain_str = ["0.25", "0.5", "0.75"];
-var s_domain = [0.25, 0.5, 0.75];
+var s_domain = [0.25, 0.5, 0.75]; // prob considering a switch (only accept 50% of time)
+var g_switch_probs = [0.125, 0.25, .375]; // prob version of s_domain
 var c_domain_str = ["1", "2", "3", "4"];
 var c_domain = [1, 2, 3, 4];
 var bead_color_btn_arr = [[null, null, null, null], [null, null, null, null]];
@@ -25,8 +24,99 @@ var bead_col_is_mutable = [true, true, true, true];
 var num_immutable_beads = 4;
 var num_mutable = 4;
 var num_beads_per_urn = num_immutable_beads + num_mutable;
+var urn0_prob_0 = [];
+var urn0_prob_1 = [];
+var urn0_ln_prob_0 = [];
+var urn0_ln_prob_1 = [];
+var gi;
+for (gi = 0; gi <= num_mutable; ++gi) {
+    urn0_prob_0[gi] = (num_beads_per_urn - gi)/(num_beads_per_urn);
+    urn0_prob_1[gi] = 1.0 - urn0_prob_0[gi];
+    urn0_ln_prob_0[gi] = Math.log(urn0_prob_0[gi]);
+    urn0_ln_prob_1[gi] = Math.log(urn0_prob_1[gi]);
+}
+var urn1_ln_prob_1 = urn0_ln_prob_0;
+var urn1_ln_prob_0 = urn0_ln_prob_1;
+
 var g_n0in0=8, g_n1in0=0, g_n0in1=0, g_n1in1=8;
-var g_curr_urn = Math.floor(Math.random()*2);
+var g_num_single_urn_config = c_domain.length + 1;
+var g_num_switch_probs = s_domain.length;
+var g_urn_prior = [0, 0, Math.log(0.5)];
+
+var s_by_urnconfig_by_active_urn = null;
+var g_prev_lookup_datum_index = -1;
+var init_lookup_table = function() {
+    var si, uj, uk, aui, by_urnconfig_by_active_urn, by_sec_urn;
+    s_by_urnconfig_by_active_urn = [];
+    g_prev_lookup_datum_index = -1;
+    for (si = 0 ; si < g_num_switch_probs; ++si) {
+        by_urnconfig_by_active_urn = [];
+        for (uj = 0; uj < g_num_single_urn_config; ++uj) {
+            by_sec_urn = [];
+            for (uk = 0; uk < g_num_single_urn_config; ++uk) {
+                by_sec_urn.push([]);
+            }
+            by_urnconfig_by_active_urn.push(by_sec_urn);
+        }
+        s_by_urnconfig_by_active_urn.push(by_urnconfig_by_active_urn);
+    }
+};
+
+var swap = function (x){return x};
+
+var calc_like_for_urn_cfg = function(data, lookup_arr, s_prob, urn_i, urn_j) {
+    var prev_lookup, oms, di, la_offest, datum, x1, x2, mx;
+    oms = 1.0 - s_prob;
+    // scaled lnL(end=0), scaled lnL(end=1), and scaler
+    //  total lnL
+    var scratch = [0.0, 0.0, 0.0];
+    la_offest = g_prev_lookup_datum_index;
+    if (la_offest < 0) {
+        prev_lookup = g_urn_prior.slice();
+    } else {
+        prev_lookup = lookup_arr.slice();
+    }
+    for (di = 1 + la_offest; di < data.length; ++di) {
+        datum = data[di];
+        console.log("data[" + di + "] = " + datum  + " lookup = " + lookup_arr + " s_prob = " + s_prob  + " urn_i = "
+                + urn_i + " urn_j = " + urn_j + " prev_" + prev_lookup);
+        x1 = oms*Math.exp(prev_lookup[0]) + s_prob*Math.exp(prev_lookup[1]);
+        x2 = s_prob*Math.exp(prev_lookup[0]) + oms*Math.exp(prev_lookup[1]);
+        if (datum === 0) {
+            scratch[0] = urn0_ln_prob_0[urn_i] + Math.log(x1);
+            scratch[1] = urn1_ln_prob_0[urn_j] + Math.log(x2);
+        } else {
+            scratch[0] = urn0_ln_prob_1[urn_i] + Math.log(x1);
+            scratch[1] = urn1_ln_prob_1[urn_j] + Math.log(x2);
+        }
+        mx = (x1 < x2 ? x2 : x1);
+        scratch[2] = prev_lookup[2] + mx;
+        scratch[0] -= mx;
+        scratch[1] -= mx;
+        prev_lookup = swap(scratch, scratch=prev_lookup);
+    }
+    // copy into the look up arr;
+    lookup_arr[0] = prev_lookup[0];
+    lookup_arr[1] = prev_lookup[1];
+    lookup_arr[2] = prev_lookup[2];
+    lookup_arr[3] = prev_lookup[2] + Math.log(Math.exp(lookup_arr[0]) + Math.exp(lookup_arr[1]));
+    console.log("new lookup = " + lookup_arr);
+};
+
+var update_likelihood_plots = function(data) {
+    var si, uj, uk, aui, by_urnconfig_by_active_urn, by_sec_urn, s_prob;
+    for (si = 0 ; si < g_num_switch_probs; ++si) {
+        by_urnconfig_by_active_urn = s_by_urnconfig_by_active_urn[si];
+        s_prob = g_switch_probs[si]
+        for (uj = 0; uj < g_num_single_urn_config; ++uj) {
+            by_sec_urn = by_urnconfig_by_active_urn[uj];
+            for (uk = 0; uk < g_num_single_urn_config; ++uk) {
+                calc_like_for_urn_cfg(data, by_sec_urn[uk], s_prob, uj, uk);
+            }
+        }
+    }
+    g_prev_lookup_datum_index = data.length - 1;
+};
 
 var changed_c = function() {
     g_true_c = parseInt(c_chooser.value);
@@ -46,6 +136,7 @@ var changed_c = function() {
 var clear_data = function() {
     g_bead_draws = [];
     g_urn_draws = [];
+    s_by_urnconfig_by_active_urn = null;
     update_data_boxes(g_bead_draws);
 };
 
@@ -248,8 +339,10 @@ var draw_next_bead = function(sprob) {
 };
 
 var update_inference = function(data) {
-//    var sum_stats = update_summary_stats(data);
-//    update_likelihood_plots(sum_stats);
+    if (s_by_urnconfig_by_active_urn === null) {
+        init_lookup_table();
+    }
+    update_likelihood_plots(data);
 };
 var g_num_obs_svg, slider_num_obs;
 
@@ -291,6 +384,8 @@ $(document).ready(function() {
                 .text(d3.format(">3d")(num_samples_per_click));
     d3.select(".simbtn")
         .attr("onclick", "draw_next_bead(g_switch_prob)");
+    d3.select(".clearbtn")
+        .attr("onclick", "clear_data()");
     changed_c();
     changed_s();
     changed_beads();
