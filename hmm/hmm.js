@@ -160,8 +160,8 @@ var update_likelihood_plots = function(data) {
 
     g_prev_lookup_datum_index = data.length - 1;
     var model_lnl = calc_model_ln_l(max_urn_lnl[0], s_by_urnconfig_by_active_urn);
-    var bar_data_arr = create_bar_data(max_urn_lnl, model_lnl);
-    draw_bar_svg(bar_data_arr);
+    var blob = create_bar_data(max_urn_lnl, model_lnl);
+    draw_bar_svg(blob[1], blob[0]);
 };
 
 var changed_c = function() {
@@ -397,98 +397,108 @@ var update_inference = function(data) {
 };
 var g_num_obs_svg, slider_num_obs;
 
-var data, bar_x0, bar_x1, bar_y, bar_xAxis, bar_yAxis;
+var bar_x0=null, bar_x1=null, bar_y=null, bar_xAxis=null, bar_yAxis=null, bar_legend = null;
 var bar_margin = ({top: 10, right: 10, bottom: 20, left: 40});
 var bar_group_key = "s_value";
 var bar_sub_keys = ["c = 1", "c = 2", "c = 3", "c = 4"];
-var bar_color = d3.scaleOrdinal().range(["#98abc5", "#7b6888","#a05d56", "#ff8c00" ]);
+var bar_color = d3.scaleOrdinal().range(["#98abc5", "#7b6888", "#ff8c00","#a05d56" ]);
 
 var create_bar_data = function(max_urn_lnl, by_s_then_c) {
+    var mll = null;
     var bd = [];
     var si, obj, ci, key;
     for (si = 0; si < g_num_switch_probs; ++si) {
-        obj = {"s_value": s_domain[si]};
+        obj = {"s_value": "s = " +s_domain[si]};
         for (ci = 0 ; ci < g_num_single_urn_config; ++ci) {
             key = "c = " + (1 + ci);
             obj[key] = by_s_then_c[si][ci];
+            if (mll === null || mll < obj[key]) {
+                mll = obj[key];
+            }
         }
         bd.push(obj);
     }
-    return bd;
+    return [bd, mll];
 };
 
-var draw_bar_svg = function(data) {
-    bar_y = d3.scaleLinear()
-        .domain([0, d3.max(data, d => d3.max(bar_sub_keys, key => d[key]))]).nice()
-        .rangeRound([bar_height - bar_margin.bottom, bar_margin.top])
-    bar_x0 = d3.scaleBand()
-        .domain(data.map(d => d[bar_group_key]))
-        .rangeRound([bar_margin.left, bar_width - bar_margin.right])
-        .paddingInner(0.1);
-    bar_x1 = d3.scaleBand()
-        .domain(bar_sub_keys)
-        .rangeRound([0, bar_x0.bandwidth()])
-        .padding(0.05);
-    bar_xAxis = function(g) {
-        return g.attr("transform", `translate(0,${bar_height - bar_margin.bottom})`)
-            .call(d3.axisBottom(bar_x0).tickSizeOuter(0))
-            .call(g => g.select(".domain").remove());
-    };
-    bar_yAxis = function(g) {
-        return g.attr("transform", `translate(${bar_margin.left},0)`)
-            .call(d3.axisLeft(bar_y).ticks(null, "s"))
-            .call(g => g.select(".domain").remove())
-            .call(g => g.select(".tick:last-of-type text").clone()
-                .attr("x", 3)
-                .attr("text-anchor", "start")
-                .attr("font-weight", "bold")
-                .text("ln L"));
-    };
-    var bar_legend = function(svg) {
-      const g = svg.attr("transform", `translate(${bar_width},0)`)
-          .attr("text-anchor", "end")
-          .attr("font-family", "sans-serif")
-          .attr("font-size", 10)
-        .selectAll("g")
-        .data(bar_color.domain().slice().reverse())
-        .join("g")
-          .attr("transform", (d, i) => `translate(0,${i * 20})`);
-      g.append("rect")
-          .attr("x", -19)
-          .attr("width", 19)
-          .attr("height", 19)
-          .attr("fill", bar_color);
-      g.append("text")
-          .attr("x", -24)
-          .attr("y", 9.5)
-          .attr("dy", "0.35em")
-          .text(d => d);
-      return g;
-    };
-
+var draw_bar_svg = function(ymax, data) {
     var svg = d3.select("#likeplot");
-    d3.select("g").remove();
-    svg.append("g")
-        .selectAll("g")
-        .data(data)
-        .join("g")
-          .attr("transform", d => `translate(${bar_x0(d[bar_group_key])},0)`)
-        .selectAll("rect")
-        .data(d => bar_sub_keys.map(key => ({key, value: d[key]})))
-        .join("rect")
-          .attr("x", d => bar_x1(d.key))
-          .attr("y", d => bar_y(d.value))
-          .attr("width", bar_x1.bandwidth())
-          .attr("height", d => bar_y(0) - bar_y(d.value))
-          .attr("fill", d => bar_color(d.key));
-    svg.append("g")
-      .call(bar_xAxis);
+    svg.selectAll("g").remove();
 
-      svg.append("g")
-          .call(bar_yAxis);
+    if (true || bar_x0 === null) {
+        bar_y = d3.scaleLinear()
+            .domain([ymax - 20, ymax+0.05]).nice()
+            .rangeRound([bar_height - bar_margin.bottom, bar_margin.top])
+        bar_x0 = d3.scaleBand()
+            .domain(data.map(d => d[bar_group_key]))
+            .rangeRound([bar_margin.left, bar_width - bar_margin.right])
+            .paddingInner(0.1);
+        bar_x1 = d3.scaleBand()
+            .domain(bar_sub_keys)
+            .rangeRound([0, bar_x0.bandwidth()])
+            .padding(0.05);
+        bar_xAxis = function (g) {
+            return g.attr("transform", `translate(0,${bar_height - bar_margin.bottom})`)
+                .call(d3.axisBottom(bar_x0).tickSizeOuter(0))
+                .call(g => g.select(".domain").remove());
+        };
+        bar_yAxis = function (g) {
+            return g.attr("transform", `translate(${bar_margin.left},0)`)
+                .call(d3.axisLeft(bar_y).ticks(null, "s"))
+                .call(g => g.select(".domain").remove())
+                .call(g => g.select(".tick:last-of-type text").clone()
+                    .attr("x", 3)
+                    .attr("text-anchor", "start")
+                    .attr("font-weight", "bold")
+                    .text("ln L"));
+        };
+        bar_legend = function(svg) {
+          const g = svg.attr("transform", `translate(${bar_width + 10},0)`)
+              .attr("text-anchor", "end")
+              .attr("font-family", "sans-serif")
+              .attr("font-size", 10)
+            .selectAll("g")
+            .data(bar_color.domain().slice().reverse())
+            .join("g")
+              .attr("transform", (d, i) => `translate(0,${i * 20})`);
+          g.append("rect")
+              .attr("x", -19)
+              .attr("width", 19)
+              .attr("height", 19)
+              .attr("fill", bar_color);
+          g.append("text")
+              .attr("x", -24)
+              .attr("y", 9.5)
+              .attr("dy", "0.35em")
+              .text(d => d);
+          return g;
+        };
+    } else {
 
-      svg.append("g")
-          .call(bar_legend);
+    }
+       svg.append("g")
+            .selectAll("g")
+            .data(data)
+            .join("g")
+              .attr("transform", d => `translate(${bar_x0(d[bar_group_key])},0)`)
+            .selectAll("rect")
+            .data(d => bar_sub_keys.map(key => ({key, value: d[key]})))
+            .join("rect")
+              .attr("x", d => bar_x1(d.key))
+              .attr("y", d => bar_y(d.value))
+              .attr("width", bar_x1.bandwidth())
+              .attr("height", d => bar_y(0) - bar_y(d.value))
+              .attr("fill", d => bar_color(d.key));
+        svg.append("g")
+          .call(bar_xAxis);
+
+        svg.append("g")
+            .call(bar_yAxis);
+
+        svg.append("g")
+              .call(bar_legend);
+
+
 
       return svg.node();
 };
