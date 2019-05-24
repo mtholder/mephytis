@@ -9,7 +9,8 @@
   <p>See <a href="https://github.com/mtholder/urn_demo" target="_blank">this repository</a> for
       instructions on generating the data with dice.
   Click on a <img class="diceimg" src="../image/dice.png"></img> below to randomize the variable close to it.</p>
-  <div class="simgroup">
+    <div class="column">
+      <div class="simgroup">
       <h3>Specify model parameters:</h3>
       <img class="diceimg" src="../image/dice.png" onclick="randomize_s()"></img>
       <label>
@@ -18,7 +19,7 @@
               <option value="0.5" selected="selected">0.5</option>
               <option value="0.75">0.75</option>
           </select>
-          <i>s</i>, the probability of randomly selecting an urn to choose from.
+          <i>s</i>, probability of randomly selecting an urn.
       </label>
       <br />
       <img class="diceimg" src="../image/dice.png" onclick="randomize_c()"></img>
@@ -125,7 +126,9 @@
       </div>
       <div><span>Simulated data (<i>n = </i></span> <span id="samplesize">0</span>):</div>
       <div class="drawcont"></div>
+    </div>
   </div>
+  <div class="column">Test</div>
   <!--div class="inference">
       <h3>Inferential stats:</h3>
       <table>

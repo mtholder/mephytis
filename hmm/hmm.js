@@ -144,6 +144,7 @@ var clear_data = function() {
     g_bead_draws = [];
     g_urn_draws = [];
     s_by_urnconfig_by_active_urn = null;
+    process_starting();
     update_data_boxes(g_bead_draws);
 };
 
@@ -190,7 +191,9 @@ var process_starting = function() {
         return;
     }
     d3.select("#errormessage").text("");
-    clear_data();
+    if (g_bead_draws.length > 0) {
+        clear_data();
+    }
     var i, curr_, urnclass_name;
     for (i = 0; i < starting_urns.length; ++i) {
         curr_ = starting_urns[i];

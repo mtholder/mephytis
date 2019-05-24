@@ -15,6 +15,9 @@ body {
     padding: 0;
     font-size: small;
     font-family: Arial, Helvetica, sans-serif;
+    position: fixed;
+    width: 100%;
+    bottom: 0;
 }
 
 .diceimg {
@@ -33,6 +36,11 @@ body {
     margin: -5px -5px;
     display: inline;
     vertical-align: middle;
+}
+
+.column {
+  float: left;
+  width: 50%;
 }
 
 button {
