@@ -95,6 +95,7 @@ var calc_model_ln_l = function(mllnl, lookup_table) {
             g_lnl_by_s_then_c[si][cmod_ind] = Math.log(l_scratch) + mllnl;
         }
     }
+    console.log("g_lnl_by_s_then_c = " + g_lnl_by_s_then_c);
     return g_lnl_by_s_then_c;
 };
 
@@ -424,11 +425,12 @@ var create_bar_data = function(max_urn_lnl, by_s_then_c) {
 var draw_bar_svg = function(ymax, data) {
     var svg = d3.select("#likeplot");
     svg.selectAll("g").remove();
-
+    const lnldiff = 12;
     if (true || bar_x0 === null) {
+        console.log('ymax = ' + ymax);
         bar_y = d3.scaleLinear()
-            .domain([ymax - 20, ymax+0.05]).nice()
-            .rangeRound([bar_height - bar_margin.bottom, bar_margin.top])
+            .domain([0, -lnldiff])
+            .range([0, bar_height - bar_margin.bottom - bar_margin.top])
         bar_x0 = d3.scaleBand()
             .domain(data.map(d => d[bar_group_key]))
             .rangeRound([bar_margin.left, bar_width - bar_margin.right])
@@ -485,9 +487,15 @@ var draw_bar_svg = function(ymax, data) {
             .data(d => bar_sub_keys.map(key => ({key, value: d[key]})))
             .join("rect")
               .attr("x", d => bar_x1(d.key))
-              .attr("y", d => bar_y(d.value))
+              .attr("y", d => bar_y(d.value - ymax)) //bar_height-bar_margin.bottom)//d => bar_y(d.value))
               .attr("width", bar_x1.bandwidth())
-              .attr("height", d => bar_y(0) - bar_y(d.value))
+              .attr("height", function(d){
+                  return bar_y(-lnldiff-3) - bar_y(0);
+                  if (ymax - d.value > lnldiff) {
+                      return 0;
+                  }
+                  return bar_y(d.value-ymax);
+              })//d.value + lnldiff - ymax) )
               .attr("fill", d => bar_color(d.key));
         svg.append("g")
           .call(bar_xAxis);
