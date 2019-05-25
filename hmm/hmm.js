@@ -429,7 +429,7 @@ var draw_bar_svg = function(ymax, data) {
     if (true || bar_x0 === null) {
         console.log('ymax = ' + ymax);
         bar_y = d3.scaleLinear()
-            .domain([0, -lnldiff])
+            .domain([ymax, ymax -lnldiff])
             .range([0, bar_height - bar_margin.bottom - bar_margin.top])
         bar_x0 = d3.scaleBand()
             .domain(data.map(d => d[bar_group_key]))
@@ -487,10 +487,10 @@ var draw_bar_svg = function(ymax, data) {
             .data(d => bar_sub_keys.map(key => ({key, value: d[key]})))
             .join("rect")
               .attr("x", d => bar_x1(d.key))
-              .attr("y", d => bar_y(d.value - ymax)) //bar_height-bar_margin.bottom)//d => bar_y(d.value))
+              .attr("y", d => bar_y(d.value)) //bar_height-bar_margin.bottom)//d => bar_y(d.value))
               .attr("width", bar_x1.bandwidth())
               .attr("height", function(d){
-                  return bar_y(-lnldiff-3) - bar_y(0);
+                  return bar_y(ymax -lnldiff-3) - bar_y(ymax);
                   if (ymax - d.value > lnldiff) {
                       return 0;
                   }
