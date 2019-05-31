@@ -199,6 +199,7 @@ var update_data_boxes = function (data) {
         .style("width", "10pt");
     drawboxes.exit()
         .remove();
+    update_inference(data);
 };
 
 var set_bead_activity = function(index, val) {
@@ -387,7 +388,6 @@ var draw_next_bead = function(sprob) {
         }
     }
     update_data_boxes(g_bead_draws);
-    update_inference(g_bead_draws);
 };
 
 var update_inference = function(data) {
