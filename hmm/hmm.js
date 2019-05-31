@@ -42,6 +42,9 @@ var g_prev_lookup_datum_index = -1;
 var bar_svg;
 var bar_width = 520;
 var bar_height = 400;
+var heat_map_svg;
+var heat_width = 520;
+var heat_height = 200;
 
 const g_prior_by_c = [[0.5,  0.5, 0,    0, 0],
                       [0.25, 0.5, 0.25, 0, 0],
@@ -163,6 +166,7 @@ var update_likelihood_plots = function(data) {
     var model_lnl = calc_model_ln_l(max_urn_lnl[0], s_by_urnconfig_by_active_urn);
     var blob = create_bar_data(max_urn_lnl, model_lnl);
     draw_bar_svg(blob[1], blob[0]);
+    draw_heat_map(max_urn_lnl[0], s_by_urnconfig_by_active_urn);
 };
 
 var changed_c = function() {
@@ -406,6 +410,13 @@ var bar_group_key = "s_value";
 var bar_sub_keys = ["c = 1", "c = 2", "c = 3", "c = 4"];
 var bar_color = d3.scaleOrdinal().range(["#98abc5", "#7b6888", "#ff8c00","#a05d56" ]);
 
+
+var heat_x0=null, heat_x1=null, heat_y=null, heat_xAxis=null, heat_yAxis=null, heat_legend = null;
+var heat_margin = ({top: 10, right: 10, bottom: 20, left: 40});
+var heat_group_key = "s_value";
+var heat_sub_keys = ["c = 1", "c = 2", "c = 3", "c = 4"];
+var heat_color = d3.scaleOrdinal().range(["#98abc5", "#7b6888", "#ff8c00","#a05d56" ]);
+
 var create_bar_data = function(max_urn_lnl, by_s_then_c) {
     var mll = null;
     var bd = [];
@@ -520,6 +531,103 @@ var draw_bar_svg = function(ymax, data) {
       return svg.node();
 };
 
+var draw_heat_map = function(ymax, data) {
+    var svg = d3.select("#heatmap");
+    svg.selectAll("g").remove();
+    const lnldiff = 12;
+    if (true || bar_x0 === null) {
+        //console.log('ymax = ' + ymax);
+        bar_y = d3.scaleLinear()
+            .domain([ymax, ymax -lnldiff])
+            .range([0, bar_height - bar_margin.bottom - bar_margin.top])
+        bar_x0 = d3.scaleBand()
+            .domain(data.map(d => d[bar_group_key]))
+            .rangeRound([bar_margin.left, bar_width - bar_margin.right])
+            .paddingInner(0.1);
+        bar_x1 = d3.scaleBand()
+            .domain(bar_sub_keys)
+            .rangeRound([0, bar_x0.bandwidth()])
+            .padding(0.05);
+        bar_xAxis = function (g) {
+            return g.attr("transform", `translate(0,${bar_height - bar_margin.bottom})`)
+                .attr("font-size", 1)
+                .call(d3.axisBottom(bar_x0).tickSizeOuter(0))
+                .call(g => g.select(".domain").remove());
+        };
+        bar_yAxis = function (g) {
+            return g.attr("transform", `translate(${bar_margin.left},0)`)
+                .call(d3.axisLeft(bar_y).ticks(null, "s"))
+                .call(g => g.select(".domain").remove())
+                .call(g => g.select(".tick:last-of-type text").clone()
+                    .attr("x", 3)
+                    .attr("text-anchor", "start")
+                    .attr("font-weight", "bold")
+                    .text("ln L"));
+        };
+        bar_legend = function(svg) {
+          const g = svg.attr("transform", `translate(${bar_width + 10},0)`)
+              .attr("text-anchor", "end")
+              .attr("font-family", "sans-serif")
+              .attr("font-size", 10)
+            .selectAll("g")
+            .data(bar_color.domain().slice().reverse())
+            .join("g")
+              .attr("transform", (d, i) => `translate(0,${i * 20})`);
+          g.append("rect")
+              .attr("x", -19)
+              .attr("width", 19)
+              .attr("height", 19)
+              .attr("fill", bar_color);
+          g.append("text")
+              .attr("x", -24)
+              .attr("y", 9.5)
+              .attr("dy", "0.35em")
+              .text(d => d);
+          return g;
+        };
+    } else {
+
+    }
+       svg.append("g")
+            .selectAll("g")
+            .data(data)
+            .join("g")
+              .attr("transform", d => `translate(${bar_x0(d[bar_group_key])},0)`)
+            .selectAll("rect")
+            .data(d => bar_sub_keys.map(key => ({key, value: d[key]})))
+            .join("rect")
+              .attr("x", d => bar_x1(d.key))
+              .attr("y", function(d) {
+                 var yv = bar_y(d.value);
+                 if (!isFinite(yv)) {
+                    return 0;
+                 }
+                 return yv;
+                 }) //bar_height-bar_margin.bottom)//d => bar_y(d.value))
+              .attr("width", bar_x1.bandwidth())
+              .attr("height", function(d) {
+                  var yyv = bar_y(d.value);
+                  if (!isFinite(yyv)) {
+                     return 0;
+                  }
+                  return bar_y(ymax -lnldiff-3) - bar_y(ymax);
+              })
+              .attr("fill", d => bar_color(d.key));
+        svg.append("g")
+          .call(bar_xAxis);
+
+        svg.append("g")
+            .call(bar_yAxis);
+
+        svg.append("g")
+              .call(bar_legend);
+
+
+
+      return svg.node();
+};
+
+
 $(document).ready(function() {
     c_chooser = document.getElementById("choose-contamination");
     s_chooser= document.getElementById("choose-switch");
@@ -570,6 +678,12 @@ $(document).ready(function() {
         .attr("id", "likeplot")
         .attr("width", bar_width)
         .attr("height", bar_height);
+
+    heat_map_svg = d3.select("#heat-map-div")
+        .append("svg")
+        .attr("id", "heatmap")
+        .attr("width", heat_width)
+        .attr("height", heat_height);
     //draw_bar_svg(bar_data);
     changed_c();
     changed_s();
