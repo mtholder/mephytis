@@ -228,10 +228,12 @@ var process_starting = function() {
     var starting_urns = document.getElementById("manualurns").childNodes;
     var starting_beads = document.getElementById("manualbeads").childNodes;
     if (starting_urns.length !== starting_beads.length) {
-        d3.select("#errormessage").text("The # of starting urns has to equal the # of starting beads!");
-        return;
+        d3.select("#errormessage").text("Starting # urns ≠ # beads!");
+        d3.select("#samplebtn").style("display", "none");
+    } else {
+        d3.select("#errormessage").text("");
+        d3.select("#samplebtn").style("display", "inline");
     }
-    d3.select("#errormessage").text("");
     if (g_bead_draws.length > 0) {
         clear_data();
     }

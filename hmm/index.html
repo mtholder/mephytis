@@ -112,8 +112,7 @@
         <label><button class="btnManualBead" onclick="manual_entry(1, -1)"style="background-color: #AAAAAA;color: #FFFFFF" ></button><sub>-</sub></label>
       </div>
       <div id="manualbeads"></div><br/>
-      <button onclick="process_starting()" class="simpleButton">Process Starting Point</button>
-      <div id="errormessage" style="color: red"><br/></div>
+      <!--button onclick="process_starting()" class="simpleButton">Process Starting Point</button-->
       <div class="numobs">
           <span># samples/click: </span>
           <br/>
@@ -122,7 +121,8 @@
       <h3><div>
           <span>Simulate:</span>
           &nbsp;&nbsp;&nbsp;<button class="simpleButton clearbtn">Clear</button>
-          &nbsp;&nbsp;&nbsp;<button class="simpleButton simbtn">Draw next <span id="btn-num-obs"></span> sample(s)</button>
+          &nbsp;&nbsp;&nbsp;<span id="samplebtn"><button class="simpleButton simbtn">Draw next <span id="btn-num-obs"></span> sample(s)</button></span>
+          <span id="errormessage" style="color: red"><br/></span>
       </div>
       <div><span>Simulated data (<i>n = </i></span> <span id="samplesize">0</span>):</div>
       <div class="drawcont"></div>
