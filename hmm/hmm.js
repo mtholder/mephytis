@@ -95,7 +95,7 @@ var calc_model_ln_l = function(mllnl, lookup_table) {
             g_lnl_by_s_then_c[si][cmod_ind] = Math.log(l_scratch) + mllnl;
         }
     }
-    console.log("g_lnl_by_s_then_c = " + g_lnl_by_s_then_c);
+    //console.log("g_lnl_by_s_then_c = " + g_lnl_by_s_then_c);
     return g_lnl_by_s_then_c;
 };
 
@@ -157,7 +157,7 @@ var update_likelihood_plots = function(data) {
             }
         }
     }
-    console.log("max_urn_lnl = " + max_urn_lnl);
+    //console.log("max_urn_lnl = " + max_urn_lnl);
 
     g_prev_lookup_datum_index = data.length - 1;
     var model_lnl = calc_model_ln_l(max_urn_lnl[0], s_by_urnconfig_by_active_urn);
@@ -167,7 +167,7 @@ var update_likelihood_plots = function(data) {
 
 var changed_c = function() {
     g_true_c = parseInt(c_chooser.value);
-    console.log("g_true_c =" + g_true_c);
+    //console.log("g_true_c =" + g_true_c);
     var i;
     for (i = 0; i < 4; ++i) {
         if (i + 1 > g_true_c) {
@@ -368,7 +368,7 @@ var draw_random_urn_index = function () {
 
 
 var draw_next_bead = function(sprob) {
-    console.log("sprob = " + sprob);
+    //console.log("sprob = " + sprob);
     var missing_prob, i;
     for (i = 0; i < num_samples_per_click; ++i) {
         var next_ind = g_bead_draws.length;
@@ -429,7 +429,7 @@ var draw_bar_svg = function(ymax, data) {
     svg.selectAll("g").remove();
     const lnldiff = 12;
     if (true || bar_x0 === null) {
-        console.log('ymax = ' + ymax);
+        //console.log('ymax = ' + ymax);
         bar_y = d3.scaleLinear()
             .domain([ymax, ymax -lnldiff])
             .range([0, bar_height - bar_margin.bottom - bar_margin.top])
@@ -443,6 +443,7 @@ var draw_bar_svg = function(ymax, data) {
             .padding(0.05);
         bar_xAxis = function (g) {
             return g.attr("transform", `translate(0,${bar_height - bar_margin.bottom})`)
+                .attr("font-size", 1)
                 .call(d3.axisBottom(bar_x0).tickSizeOuter(0))
                 .call(g => g.select(".domain").remove());
         };
@@ -489,15 +490,21 @@ var draw_bar_svg = function(ymax, data) {
             .data(d => bar_sub_keys.map(key => ({key, value: d[key]})))
             .join("rect")
               .attr("x", d => bar_x1(d.key))
-              .attr("y", d => bar_y(d.value)) //bar_height-bar_margin.bottom)//d => bar_y(d.value))
+              .attr("y", function(d) {
+                 var yv = bar_y(d.value);
+                 if (!isFinite(yv)) {
+                    return 0;
+                 }
+                 return yv;
+                 }) //bar_height-bar_margin.bottom)//d => bar_y(d.value))
               .attr("width", bar_x1.bandwidth())
-              .attr("height", function(d){
-                  return bar_y(ymax -lnldiff-3) - bar_y(ymax);
-                  if (ymax - d.value > lnldiff) {
-                      return 0;
+              .attr("height", function(d) {
+                  var yyv = bar_y(d.value);
+                  if (!isFinite(yyv)) {
+                     return 0;
                   }
-                  return bar_y(d.value-ymax);
-              })//d.value + lnldiff - ymax) )
+                  return bar_y(ymax -lnldiff-3) - bar_y(ymax);
+              })
               .attr("fill", d => bar_color(d.key));
         svg.append("g")
           .call(bar_xAxis);
