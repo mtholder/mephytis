@@ -84,28 +84,7 @@ $\mathbf{P} = \left(\begin{array}{cccc} 1 - s & s/3 & s/3 & s/3 \\
  s/3 & s/3 & s/3 & 1 - s
  \end{array}\right)$
 \hskip 3em
-\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,semithick,every state/.style={fill=red,draw=none,text=black,shape=ellipse}]
-\node[state, fill=cyan] (A) {A};
-\node[state, fill=black!60!green,text=white] (C) [right=of A] {C};
-\node[state, fill=magenta,text=white] (T) [below=of C] {T};
-\node[state, fill=orange,text=black] (G) [below=of A] {G};
-\path (A) edge node {$\frac{s}{3}$} (C) ;
-\path (A) edge node {$\frac{s}{3}$} (G) ;
-\path (A) edge node [pos=.3] {$\frac{s}{3}$} (T) ;
-\path (A) edge [loop left] node {$1-s$} (A) ;
-\path (C) edge node {} (A) ;
-\path (C) edge node {} (G) ;
-\path (C) edge node {$\frac{s}{3}$} (T) ;
-\path (C) edge [loop right] node {$1-s$} (C) ;
-\path (G) edge node {} (A) ;
-\path (G) edge node {} (C) ;
-\path (G) edge node {$\frac{s}{3}$} (T) ;
-\path (G) edge [loop left] node {$1-s$} (G) ;
-\path (T) edge node {} (A) ;
-\path (T) edge node {} (G) ;
-\path (T) edge node {} (C) ;
-\path (T) edge [loop right] node {$1-s$} (T) ;
-\end{tikzpicture}
+\input{two-state-markov.tex}
 \end{figure}
 
 There is no tendency to stay in one state longer than any other, so if you were to sample

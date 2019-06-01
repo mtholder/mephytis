@@ -535,28 +535,28 @@ var draw_heat_map = function(ymax, data) {
     var svg = d3.select("#heatmap");
     svg.selectAll("g").remove();
     const lnldiff = 12;
-    if (true || bar_x0 === null) {
+    if (true || heat_x0 === null) {
         //console.log('ymax = ' + ymax);
-        bar_y = d3.scaleLinear()
+        heat_y = d3.scaleLinear()
             .domain([ymax, ymax -lnldiff])
-            .range([0, bar_height - bar_margin.bottom - bar_margin.top])
-        bar_x0 = d3.scaleBand()
-            .domain(data.map(d => d[bar_group_key]))
-            .rangeRound([bar_margin.left, bar_width - bar_margin.right])
+            .range([0, heat_height - heat_margin.bottom - heat_margin.top])
+        heat_x0 = d3.scaleBand()
+            .domain(data.map(d => d[heat_group_key]))
+            .rangeRound([heat_margin.left, heat_width - heat_margin.right])
             .paddingInner(0.1);
-        bar_x1 = d3.scaleBand()
-            .domain(bar_sub_keys)
-            .rangeRound([0, bar_x0.bandwidth()])
+        heat_x1 = d3.scaleBand()
+            .domain(heat_sub_keys)
+            .rangeRound([0, heat_x0.bandwidth()])
             .padding(0.05);
-        bar_xAxis = function (g) {
-            return g.attr("transform", `translate(0,${bar_height - bar_margin.bottom})`)
+        heat_xAxis = function (g) {
+            return g.attr("transform", `translate(0,${heat_height - heat_margin.bottom})`)
                 .attr("font-size", 1)
-                .call(d3.axisBottom(bar_x0).tickSizeOuter(0))
+                .call(d3.axisBottom(heat_x0).tickSizeOuter(0))
                 .call(g => g.select(".domain").remove());
         };
-        bar_yAxis = function (g) {
-            return g.attr("transform", `translate(${bar_margin.left},0)`)
-                .call(d3.axisLeft(bar_y).ticks(null, "s"))
+        heat_yAxis = function (g) {
+            return g.attr("transform", `translate(${heat_margin.left},0)`)
+                .call(d3.axisLeft(heat_y).ticks(null, "s"))
                 .call(g => g.select(".domain").remove())
                 .call(g => g.select(".tick:last-of-type text").clone()
                     .attr("x", 3)
@@ -564,20 +564,20 @@ var draw_heat_map = function(ymax, data) {
                     .attr("font-weight", "bold")
                     .text("ln L"));
         };
-        bar_legend = function(svg) {
-          const g = svg.attr("transform", `translate(${bar_width + 10},0)`)
+        heat_legend = function(svg) {
+          const g = svg.attr("transform", `translate(${heat_width + 10},0)`)
               .attr("text-anchor", "end")
               .attr("font-family", "sans-serif")
               .attr("font-size", 10)
             .selectAll("g")
-            .data(bar_color.domain().slice().reverse())
+            .data(heat_color.domain().slice().reverse())
             .join("g")
               .attr("transform", (d, i) => `translate(0,${i * 20})`);
           g.append("rect")
               .attr("x", -19)
               .attr("width", 19)
               .attr("height", 19)
-              .attr("fill", bar_color);
+              .attr("fill", heat_color);
           g.append("text")
               .attr("x", -24)
               .attr("y", 9.5)
@@ -592,35 +592,35 @@ var draw_heat_map = function(ymax, data) {
             .selectAll("g")
             .data(data)
             .join("g")
-              .attr("transform", d => `translate(${bar_x0(d[bar_group_key])},0)`)
+              .attr("transform", d => `translate(${heat_x0(d[heat_group_key])},0)`)
             .selectAll("rect")
-            .data(d => bar_sub_keys.map(key => ({key, value: d[key]})))
+            .data(d => heat_sub_keys.map(key => ({key, value: d[key]})))
             .join("rect")
-              .attr("x", d => bar_x1(d.key))
+              .attr("x", d => heat_x1(d.key))
               .attr("y", function(d) {
-                 var yv = bar_y(d.value);
+                 var yv = heat_y(d.value);
                  if (!isFinite(yv)) {
                     return 0;
                  }
                  return yv;
-                 }) //bar_height-bar_margin.bottom)//d => bar_y(d.value))
-              .attr("width", bar_x1.bandwidth())
+                 }) //heat_height-heat_margin.bottom)//d => heat_y(d.value))
+              .attr("width", heat_x1.bandwidth())
               .attr("height", function(d) {
-                  var yyv = bar_y(d.value);
+                  var yyv = heat_y(d.value);
                   if (!isFinite(yyv)) {
                      return 0;
                   }
-                  return bar_y(ymax -lnldiff-3) - bar_y(ymax);
+                  return heat_y(ymax -lnldiff-3) - heat_y(ymax);
               })
-              .attr("fill", d => bar_color(d.key));
+              .attr("fill", d => heat_color(d.key));
         svg.append("g")
-          .call(bar_xAxis);
+          .call(heat_xAxis);
 
         svg.append("g")
-            .call(bar_yAxis);
+            .call(heat_yAxis);
 
         svg.append("g")
-              .call(bar_legend);
+              .call(heat_legend);
 
 
 
