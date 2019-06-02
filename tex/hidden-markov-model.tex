@@ -1,12 +1,11 @@
 \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,semithick,every state/.style={fill=red,draw=none,text=black,shape=ellipse}]
 \node[state, fill=orange!30!,text=black]  (h1) {hidden 1};
-\node[state, fill=black!20!green!30!,text=black] (h2) [right=of h1] {hidden 2};
-\node[state, fill=orange,text=black, draw=black] (v1) [below=of h1] {emitted 1};
-\node[state, fill=black!60!green,text=white, draw=black] (v2) [above=of h2] {emitted 2};
-\path (h1) edge node {${s}$} (h2) ;
-\path (h2) edge node {} (h1) ;
-\path (h1) edge [style=dashed] node [pos=.5] {$e_{1}$} (v1) ;
-\path (h1) edge [style=dashed] node [pos=.5] {{$1-e_{1}$}} (v2) ;
-\path (h2) edge [style=dashed] node [pos=.5] {$1- e_{2}$} (v1) ;
-\path (h2) edge [style=dashed] node [pos=.5] {{$e_{2}$}} (v2) ;
+\node[state, fill=orange,text=black, draw=black] (v1) [above right=of h1] {emitted 1};
+\node[state, fill=black!20!green!30!,text=black] (h2) [below right=of v1] {hidden 2};
+\node[state, fill=black!60!green,text=white, draw=black] (v2) [below right=of h1] {emitted 2};
+\path (h1) edge [<->] node {${\sigma}$} (h2) ;
+\path (h1) edge [style=dashed] node [pos=.5] {$\phi_{1}$} (v1) ;
+\path (h1) edge [style=dashed] node [pos=.3,below] {{$1-\phi_{1}${\color{white}m}}} (v2) ;
+\path (h2) edge [style=dashed] node [pos=.3,above] {{\color{white}mv}$1- \phi_{2}$} (v1) ;
+\path (h2) edge [style=dashed] node [pos=.5] {{$\phi_{2}$}} (v2) ;
 \end{tikzpicture}
