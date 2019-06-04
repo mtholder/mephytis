@@ -326,8 +326,10 @@ var optimize_all_edges = function() {
   sweepOptState.intervalEvent = setInterval(intervalOptAllEdges, 5*pauseTime);
 };
 
+var show_trace_for = 0;
 var do_dragmove = function(node_data, dx, dy) {
   var e = node_data.edge;
+  show_trace_for = node_data.index -1;
   var nx, ny, p_x, p_y, m_x, m_y, par_ind, ang, y_from_x, x_from_y;
   var dist_from_y, dist_from_x;
   var hit_par=false;
@@ -824,6 +826,9 @@ var refresh_likelihood_traces = function(tree) {
   };
   traceData[xl] = currDatum;
   for (i = 0 ; i < 5; ++i) {
+    if (show_trace_for != i) {
+      continue;
+    }
     var r = tree1trace_roots[i];
     r.append("path")
     .datum(traceData)
@@ -860,6 +865,7 @@ var check_max_lnL = function(old_state, new_state) {
 
 var do_optimize_move = function(node_data, ini_x, ini_y) {
   currentlyOptimizing = node_data.index;
+  show_trace_for - node_data.index -1;
   var incXOffset, incYOffset;
   if (node_data.index == 0) {
     currentlyOptimizing = -1;
