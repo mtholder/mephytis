@@ -8,6 +8,7 @@
 <body>
   <p>See <a target="_blank" href="../tex/discrete-time-and-state-Markov.pdf">discrete-time-and-state-Markov.pdf</a>
   for notes and background information. See the missing data version <a href="./missing.html">here</a></p>
+  <div class="column">
   <div class="simgroup">
       <h3>Simulation:</h3>
       <div class="swprob">
@@ -27,7 +28,8 @@
       </div>
       <div><span>Simulated data (<i>n = </i></span> <span id="samplesize">0</span>):</div>
       <div class="drawcont"></div>
-  </div>
+  </div></div>
+  <div class="column">
   <div class="inference">
       <h3>Inferential stats:</h3>
       <table>
@@ -49,7 +51,7 @@
       </p>
       <div id="likelihood-trace-div"></div>
   </div>
-
+  </div>
     <script src="../d3/d3.v5.min.js"></script>
     <script src="../d3-simple-slider/d3-simple-slider.js"></script>
     <script src="dsdtmarkov.js"></script>

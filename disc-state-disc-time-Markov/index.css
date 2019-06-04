@@ -10,6 +10,11 @@ body {
     font-family: "Comic Sans MS", cursive, sans-serif;
 }
 
+.column {
+  float: left;
+  width: 50%;
+}
+
 .footer {
     margin: 0;
     padding: 0;
