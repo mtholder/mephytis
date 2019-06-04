@@ -1,0 +1,12 @@
+\begin{tikzpicture}[--]
+\node[fill=cyan, fill,circle,minimum size=1.6in, maximum size=1.6in] (A) {A};
+\node[fill=black!60!green,text=white, fill,circle,minimum size=1.2in, maximum size=1.2in] (C) [right=of A] {C};
+\node[fill=magenta,text=white,fill,circle, minimum size=0.4in, maximum size=.4in] (T) [below=of C] {T};
+\node[fill=orange,text=black,fill,circle, minimum size=0.8in, maximum size=.8in] (G) [below=of A] {G};
+\path (A) edge [line width=2.0pt] node {} (C) ;
+\path (A) edge [line width=10.0pt] node {} (G) ;
+\path (A) edge [line width=2.0pt] node {} (T) ;
+\path (C) edge [line width=2.0pt] node {} (G) ;
+\path (C) edge [line width=10.0pt] node {} (T) ;
+\path (G) edge [line width=2.0pt] node {} (T) ;
+\end{tikzpicture}
