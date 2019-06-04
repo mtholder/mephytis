@@ -169,22 +169,22 @@ var update_inference = function(data) {
     update_likelihood_plots(sum_stats);
 };
 
-var _pad_ss_arr = function(ss_arr, ind) {
+var _pad_ss_arr = function(ss_arr, ind, has_seen_a_base) {
     while (ind >= ss_arr.length) {
         ss_arr.push(null);
     }
     if (ss_arr[ind] === null) {
-        ss_arr[ind] = {"nd":0, "ns": 0};
+        ss_arr[ind] = {"nd":0, "ns": 0, "atleastone": has_seen_a_base};
     }
 };
 
-var add_change = function(ss_arr, ind){
-    _pad_ss_arr(ss_arr, ind);
+var add_change = function(ss_arr, ind, has_seen_a_base){
+    _pad_ss_arr(ss_arr, ind, has_seen_a_base);
     ss_arr[ind].nd = 1 + ss_arr[ind].nd;
 };
 
-var add_non_change = function(ss_arr, ind){
-    _pad_ss_arr(ss_arr, ind);
+var add_non_change = function(ss_arr, ind, has_seen_a_base){
+    _pad_ss_arr(ss_arr, ind, has_seen_a_base);
     ss_arr[ind].ns = 1 + ss_arr[ind].ns;
 };
 
@@ -193,31 +193,38 @@ var update_summary_stats = function(data) {
     var i;
     var consec_num_missing = 0;
     var prev_non_missing = null;
-    _pad_ss_arr(ss_arr, 0);
+    var has_seen_a_base = false;
+    _pad_ss_arr(ss_arr, 0, has_seen_a_base);
     if (data.length == 0) {
         // pass
-    } else if (data.length > 0 && data[0] == MISSING_CODE) {
+    } else if (data[0] == MISSING_CODE) {
         consec_num_missing = 1;
     } else {
         prev_non_missing = data[0];
+        ss_arr[0].atleastone = true;
+        has_seen_a_base = true;
     }
     for (i = 1; i < data.length; ++i) {
         if (data[i] == MISSING_CODE) {
             consec_num_missing = consec_num_missing + 1;
         } else {
+            has_seen_a_base = true;
+            if (ss_arr.length > 0) {
+                ss_arr[ss_arr.length -1].atleastone = true;
+            }
             if (data[i - 1] == MISSING_CODE) {
                 if (prev_non_missing === null) {
                     // no op
                 } else if (data[i] == prev_non_missing) {
-                    add_non_change(ss_arr, consec_num_missing);
+                    add_non_change(ss_arr, consec_num_missing, true);
                 } else {
-                    add_change(ss_arr, consec_num_missing);
+                    add_change(ss_arr, consec_num_missing, true);
                 }
             } else {
                 if (data[i] == data[i - 1]) {
-                    add_non_change(ss_arr, consec_num_missing);
+                    add_non_change(ss_arr, consec_num_missing, true);
                 } else {
-                    add_change(ss_arr, consec_num_missing);
+                    add_change(ss_arr, consec_num_missing, true);
                 }
             }
             consec_num_missing = 0;
@@ -385,10 +392,7 @@ var calc_ln_like = function(sum_stats, switch_bin_prob) {
     var nd = sum_stats.nd;
     var nti = nd + ns;
     if (nti == 0) {
-        if (sum_stats.n == 0) {
-            return 0.0;
-        }
-        return Math.log(0.25);
+        return (sum_stats.atleastone ? Math.log(0.25) : 0.0);
     }
     var third_of_switch = switch_bin_prob/3.0;
     var nonswitch = 1.0 - switch_bin_prob;
