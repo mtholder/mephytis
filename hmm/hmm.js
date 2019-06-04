@@ -42,10 +42,7 @@ var g_prev_lookup_datum_index = -1;
 var bar_svg;
 var bar_width = 520;
 var bar_height = 400;
-var heat_map_svg;
-var heat_width = 520;
-var heat_height = 200;
-
+//
 const g_prior_by_c = [[0.5,  0.5, 0,    0, 0],
                       [0.25, 0.5, 0.25, 0, 0],
                       [0.125, 0.375, 0.375, 0.125, 0],
@@ -166,7 +163,7 @@ var update_likelihood_plots = function(data) {
     var model_lnl = calc_model_ln_l(max_urn_lnl[0], s_by_urnconfig_by_active_urn);
     var blob = create_bar_data(max_urn_lnl, model_lnl);
     draw_bar_svg(blob[1], blob[0]);
-    draw_heat_map(max_urn_lnl[0], s_by_urnconfig_by_active_urn);
+    //draw_heat_map(max_urn_lnl[0], s_by_urnconfig_by_active_urn);
 };
 
 var changed_c = function() {
@@ -411,12 +408,12 @@ var bar_sub_keys = ["c = 1", "c = 2", "c = 3", "c = 4"];
 var bar_color = d3.scaleOrdinal().range(["#98abc5", "#7b6888", "#ff8c00","#a05d56" ]);
 
 
-var heat_x0=null, heat_x1=null, heat_y=null, heat_xAxis=null, heat_yAxis=null, heat_legend = null;
+/*var heat_x0=null, heat_x1=null, heat_y=null, heat_xAxis=null, heat_yAxis=null, heat_legend = null;
 var heat_margin = ({top: 10, right: 10, bottom: 20, left: 40});
 var heat_group_key = "s_value";
 var heat_sub_keys = ["c = 1", "c = 2", "c = 3", "c = 4"];
 var heat_color = d3.scaleOrdinal().range(["#98abc5", "#7b6888", "#ff8c00","#a05d56" ]);
-
+*/
 var create_bar_data = function(max_urn_lnl, by_s_then_c) {
     var mll = null;
     var bd = [];
@@ -531,6 +528,7 @@ var draw_bar_svg = function(ymax, data) {
       return svg.node();
 };
 
+/*
 var draw_heat_map = function(ymax, data) {
     var svg = d3.select("#heatmap");
     svg.selectAll("g").remove();
@@ -626,7 +624,7 @@ var draw_heat_map = function(ymax, data) {
 
       return svg.node();
 };
-
+*/
 
 $(document).ready(function() {
     c_chooser = document.getElementById("choose-contamination");
@@ -679,11 +677,11 @@ $(document).ready(function() {
         .attr("width", bar_width)
         .attr("height", bar_height);
 
-    heat_map_svg = d3.select("#heat-map-div")
-        .append("svg")
-        .attr("id", "heatmap")
-        .attr("width", heat_width)
-        .attr("height", heat_height);
+//    heat_map_svg = d3.select("#heat-map-div")
+//        .append("svg")
+//        .attr("id", "heatmap")
+//        .attr("width", heat_width)
+//        .attr("height", heat_height);
     //draw_bar_svg(bar_data);
     changed_c();
     changed_s();
